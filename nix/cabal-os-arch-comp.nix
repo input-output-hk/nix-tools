@@ -25,10 +25,10 @@
     isNetBSD    = false;
     isDragonFly = false;
     isSolaris   = false;
-    isAIX       = false;
+    isAix       = false;
     isHPUX      = false;
     isIRIX      = false;
-    isHaLVM     = false;
+    isHalvm     = false;
     isHurd      = false;
     isIOS       = false;
     isAndroid   = false;
