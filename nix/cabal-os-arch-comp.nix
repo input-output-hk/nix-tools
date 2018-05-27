@@ -19,8 +19,8 @@
     # OSs
     isLinux     = false;
     isWindows   = false;
-    isOSX       = false;
-    isFreeBSD   = false;
+    isOsx       = false;
+    isFreebsd   = false;
     isOpenBSD   = false;
     isNetBSD    = false;
     isDragonFly = false;
@@ -30,7 +30,7 @@
     isIRIX      = false;
     isHalvm     = false;
     isHurd      = false;
-    isIOS       = false;
+    isIos       = false;
     isAndroid   = false;
     isGhcjs     = false;
   };

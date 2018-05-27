@@ -23,24 +23,47 @@
     };
   };
   system = let
-    os = {
-      "linux" = "Linux";
-      "darwin" = "OSX";
-    }.${pkgs.hostPlatform.parsed.kernel.name};
-    arch = {
-      "x86_64" = "X86_64";
-    }.${pkgs.hostPlatform.parsed.cpu.name};
-  in cabal.os // { "is${os}" = true; }
-    // cabal.arch // { "is${arch}" = true; };
+    hostMap = import ./host-map.nix pkgs.stdenv;
+  in cabal.os // { "is${hostMap.os}" = true; }
+    // cabal.arch // { "is${hostMap.arch}" = true; };
 
   configs = lib.mapAttrs (_: f: import f {
-    inherit hsPkgs pkgconfPkgs compiler system;
+    inherit hsPkgs compiler system;
     pkgs = pkgs // {
+      pthread = null;
+      "stdc++" = null;
+      ssl = pkgs.openssl.dev;
+      crypto = pkgs.openssl.dev;
       z = pkgs.zlib;
+      GL = pkgs.libGL;
+      GLU = pkgs.libGLU;
+      alut = pkgs.freealut;
+      X11 = pkgs.xorg.libX11;
+      Xrandr = pkgs.xorg.libXrandr;
+      Xext = pkgs.xorg.libXext;
+      Xi = pkgs.xorg.libXi;
+      Xxf86vm = pkgs.xorg.libXxf86vm;
+      Xcursor = pkgs.xorg.libXcursor;
+      Xinerama = pkgs.xorg.libXinerama;
+      mysqlclient = pkgs.mysql;
+      Imlib2 = pkgs.imlib2;
+      asound = pkgs.alsaLib;
+      ffi = null;
     };
-  }) stackage.packages;
+    pkgconfPkgs = pkgs // {
+      cairo-pdf = pkgs.cairo;
+      cairo-ps = pkgs.cairo;
+      cairo-svg = pkgs.cairo;
+      xft = pkgs.xorg.libXft;
+      xau = pkgs.xorg.libXau;
+      libR = pkgs.R;
+      fftw3f = pkgs.fftwFloat;
+      fftw3 = pkgs.fftw;
+    };
+  }) (stackage.packages // {
+    hello = hackage.exprs.hello."1.0.0.2";
+  });
 
-  pkgconfPkgs = pkgs;
-  hsPkgs = lib.mapAttrs (_: _: null) stackage.compiler.packages
+  hsPkgs = lib.mapAttrs (_: _: null) (stackage.compiler.packages // { hsc2hs = "0.68.2"; })
     // lib.mapAttrs (_: new-builder) configs;
 }))

@@ -54,5 +54,22 @@ with haskellLib;
           tys;
     in libComp (subComps z);
 
-  hasLibrary = foldComponents [] (_: _: _: true) false;
+  componentPrefix = {
+    # Are all of these right?
+    sublibs = "sublib";
+    foreignlibs = "foreignlib";
+    exes = "exe";
+    tests = "test";
+    benchmarks = "bench";
+  };
+
+  applyComponents = f: comps:
+    let
+      libComp = lib.mapAttrs (cname: f {ctype="lib"; inherit cname;}) (removeAttrs comps subComponentTypes);
+      subComps = lib.mapAttrs
+        (ctype: lib.mapAttrs (cname: f {inherit cname; ctype=componentPrefix.${ctype};}))
+        (builtins.intersectAttrs (lib.genAttrs subComponentTypes (_: null)) comps);
+    in subComps // libComp;
+
+  isLibrary = componentId: componentId.ctype == "lib";
 }
