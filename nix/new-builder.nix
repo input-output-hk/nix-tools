@@ -1,12 +1,13 @@
-{ stdenv, lib, haskellLib, ghc, hashes, fetchurl, writeText, runCommand, pkgconfig, callPackage }:
+{ stdenv, lib, haskellLib, ghc, fetchurl, writeText, runCommand, pkgconfig, callPackage }:
 
 { flags ? {}
 , package ? {}
 , components ? {}
 
 , name ? "${package.identifier.name}-${package.identifier.version}"
-, sha256 ? (hashes.${package.identifier.name}.${package.identifier.version} or (throw name))
+, sha256 ? null
 , src ? fetchurl { url = "mirror://hackage/${name}.tar.gz"; inherit sha256; }
+, cabalFile ? null
 }@config:
 
 let
@@ -48,7 +49,7 @@ let
   comp-builder = callPackage ./comp-builder.nix { inherit ghc haskellLib; };
 
   buildComp = componentId: component: comp-builder {
-    inherit componentId package name src flags setup;
+    inherit componentId package name src flags setup cabalFile;
     component =
       let
         nonNullLists = fs: component // lib.genAttrs fs (field:
@@ -56,7 +57,7 @@ let
             then builtins.filter (x: x != null) component.${field}
             else []);
       in {
-        allowNewer = true;
+        allowNewer = false;
         allowOlder = false;
       } // nonNullLists [
         "depends"

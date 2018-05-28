@@ -7,6 +7,7 @@
 , setup
 , src
 , flags
+, cabalFile
 }:
 
 let
@@ -77,6 +78,10 @@ in stdenv.mkDerivation {
   SETUP_HS = setup + /bin/Setup;
 
   # Phases
+  prePatch = lib.optionalString (cabalFile != null) ''
+    cat ${cabalFile} > ${package.identifier.name}.cabal
+  '';
+
   configurePhase = ''
     echo Configure flags:
     printf "%q " ${finalConfigureFlags}

@@ -4,11 +4,14 @@
   inherit (pkgs) lib stdenv;
   ghc = pkgs.haskell.compiler.${stackage.compiler.nix-name};
   haskellLib = import ./lib.nix { inherit lib haskellLib; };
-  hackage = import ../hackage.nix-master;
-  stackage = import ../stackage.nix-master/lts-11.7.nix hackage.exprs;
+  hackage = import ../hackage;
+  stackage = import ../stackage/lts-11.11.nix (lib.mapAttrs (_: p:
+    lib.mapAttrs (ver: revs: lib.mapAttrs' (_: rev:
+      {name = rev.cabalSha256; value = revs // {revision = rev;};}
+    ) (builtins.removeAttrs revs ["revision" "sha256"])) p
+  ) hackage);
   new-builder = pkgs.callPackage ./new-builder.nix {
     inherit haskellLib ghc;
-    inherit (hackage) hashes;
   };
   cabal = import ./cabal-os-arch-comp.nix;
 
@@ -27,7 +30,7 @@
   in cabal.os // { "is${hostMap.os}" = true; }
     // cabal.arch // { "is${hostMap.arch}" = true; };
 
-  configs = lib.mapAttrs (_: f: import f {
+  configs = lib.mapAttrs (_: f: import f.revision {
     inherit hsPkgs compiler system;
     pkgs = pkgs // {
       pthread = null;
@@ -60,9 +63,10 @@
       fftw3f = pkgs.fftwFloat;
       fftw3 = pkgs.fftw;
     };
-  }) (stackage.packages // {
-    hello = hackage.exprs.hello."1.0.0.2";
-  });
+  } // {
+    inherit (f) sha256;
+    cabalFile = if f.revision == f.r0 then null else f.revision.cabalFile;
+  }) stackage.packages;
 
   hsPkgs = lib.mapAttrs (_: _: null) (stackage.compiler.packages // { hsc2hs = "0.68.2"; })
     // lib.mapAttrs (_: new-builder) configs;
