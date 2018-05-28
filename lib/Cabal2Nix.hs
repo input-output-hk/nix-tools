@@ -2,7 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE FlexibleInstances #-}
 
-module Cabal2Nix (cabal2nix, Src(..), CabalFile(..), CabalFileGenerator(..), cabalFilePath, cabalFilePkgName) where
+module Cabal2Nix (cabal2nix, gpd2nix, Src(..), CabalFile(..), CabalFileGenerator(..), cabalFilePath, cabalFilePkgName) where
 
 import Distribution.PackageDescription.Parsec (readGenericPackageDescription, parseGenericPackageDescriptionMaybe)
 import Distribution.Verbosity (normal)
@@ -76,13 +76,14 @@ genExtra Hpack = mkNonRecSet [ "cabal-generator" $= mkStr "hpack" ]
 
 cabal2nix :: Maybe Src -> CabalFile -> IO NExpr
 cabal2nix src = \case
-  (OnDisk path) -> fmap (go Nothing)
+  (OnDisk path) -> fmap (gpd2nix src Nothing)
     $ readGenericPackageDescription normal path
-  (InMemory gen path body) -> fmap (go (Just $ genExtra gen))
+  (InMemory gen path body) -> fmap (gpd2nix src (Just $ genExtra gen))
     $ maybe (error "Failed to parse in-memory cabal file") pure (parseGenericPackageDescriptionMaybe body)
-  where go :: Maybe NExpr -> GenericPackageDescription -> NExpr
-        go extra gpd = mkFunction args . lets gpd $ toNix gpd $//? (toNix <$> src) $//? extra
-        args :: Params NExpr
+
+gpd2nix :: Maybe Src -> Maybe NExpr -> GenericPackageDescription -> NExpr
+gpd2nix src extra gpd = mkFunction args . lets gpd $ toNix gpd $//? (toNix <$> src) $//? extra
+  where args :: Params NExpr
         args = mkParamset [ ("system", Nothing)
                           , ("compiler", Nothing)
                           , ("flags", Just $ mkNonRecSet [])
