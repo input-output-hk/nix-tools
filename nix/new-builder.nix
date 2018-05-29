@@ -56,10 +56,7 @@ let
           if component ? ${field}
             then builtins.filter (x: x != null) component.${field}
             else []);
-      in {
-        allowNewer = false;
-        allowOlder = false;
-      } // nonNullLists [
+      in nonNullLists [
         "depends"
         "libs"
         "frameworks"

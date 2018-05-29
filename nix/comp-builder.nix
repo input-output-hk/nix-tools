@@ -30,8 +30,6 @@ let
     extraLibDirs = flagsAndConfig "extra-lib-dirs" (map (p: "${p}/lib") component.libs);
     extraIncludeDirs = flagsAndConfig "extra-include-dirs" (map (p: "${lib.getDev p}/include") component.libs);
     extraFameworks = flagsAndConfig "extra-framework-dirs" (map (p: "${p}/Library/Frameworks") component.frameworks);
-    allowNewer = lib.mapAttrs (_: lib.optional component.allowNewer) { flags = "--allow-newer"; config = "allow-newer: True"; };
-    allowOlder = lib.mapAttrs (_: lib.optional component.allowOlder) { flags = "--allow-older"; config = "allow-older: True"; };
     userFlags = {
       flags = [("--flags=\"" + lib.concatStringsSep " " (lib.mapAttrsToList (fname: val: lib.optionalString (!val) "-" + fname) flags) + "\"")];
       config = [];
