@@ -1,4 +1,4 @@
-{ stdenv, lib, haskellLib, ghc, fetchurl, writeText, runCommand, pkgconfig, callPackage }:
+{ pkgs, stdenv, lib, haskellLib, ghc, fetchurl, writeText, runCommand, pkgconfig, weakCallPackage }:
 
 { flags ? {}
 , package ? {}
@@ -47,7 +47,7 @@ let
     '';
   };
 
-  comp-builder = callPackage ./comp-builder.nix { inherit ghc haskellLib; };
+  comp-builder = weakCallPackage pkgs ./comp-builder.nix { inherit ghc haskellLib; };
 
   buildComp = componentId: component: comp-builder {
     inherit componentId package name src flags setup cabalFile;
