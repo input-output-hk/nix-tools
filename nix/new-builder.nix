@@ -16,7 +16,8 @@ let
     main = defaultMain
   '';
   defaultSetup = runCommand "default-Setup" { nativeBuildInputs = [ghc]; } ''
-    ghc ${defaultSetupSrc} --make -o $out
+    cat ${defaultSetupSrc} > Setup.hs
+    ghc Setup.hs --make -o $out
   '';
 
   setup = stdenv.mkDerivation {
