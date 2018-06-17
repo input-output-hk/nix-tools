@@ -70,5 +70,6 @@ let
 in {
   components = haskellLib.applyComponents buildComp components;
   inherit (package) identifier;
-  inherit setup;
+  inherit setup cabalFile;
+  isHaskell = true;
 }

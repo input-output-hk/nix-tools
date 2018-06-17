@@ -48,7 +48,7 @@ pkgs, hsPkgs, flags :: Text
 pkgs   = "pkgs"
 hsPkgs = "hsPkgs"
 pkgconfPkgs = "pkgconfPkgs"
-flags  = "_flags"
+flags  = "flags"
 
 ($//?) :: NExpr -> Maybe NExpr -> NExpr
 lhs $//? (Just e) = lhs $// e
@@ -82,17 +82,15 @@ cabal2nix src = \case
     $ maybe (error "Failed to parse in-memory cabal file") pure (parseGenericPackageDescriptionMaybe body)
 
 gpd2nix :: Maybe Src -> Maybe NExpr -> GenericPackageDescription -> NExpr
-gpd2nix src extra gpd = mkFunction args . lets gpd $ toNix gpd $//? (toNix <$> src) $//? extra
+gpd2nix src extra gpd = mkFunction args $ toNix gpd $//? (toNix <$> src) $//? extra
   where args :: Params NExpr
         args = mkParamset [ ("system", Nothing)
                           , ("compiler", Nothing)
-                          , ("flags", Just $ mkNonRecSet [])
+                          , ("flags", Nothing)
                           , (pkgs, Nothing)
                           , (hsPkgs, Nothing)
                           , (pkgconfPkgs, Nothing)]
                           False
-        lets :: GenericPackageDescription -> NExpr -> NExpr
-        lets gpd = mkLets [ flags $= (mkNonRecSet . fmap toNixBinding $ genPackageFlags gpd) $// mkSym "flags" ]
 
 class HasBuildInfo a where
   getBuildInfo :: a -> BuildInfo
@@ -185,7 +183,7 @@ mkSysDep :: String -> SysDependency
 mkSysDep = SysDependency
 
 instance ToNixExpr GenericPackageDescription where
-  toNix gpd = mkNonRecSet $ [ "flags"      $= mkSym flags -- keep track of the final flags; and allow them to be inspected
+  toNix gpd = mkNonRecSet $ [ "flags"      $= (mkNonRecSet . fmap toNixBinding $ genPackageFlags gpd)
                             , "package"    $= (toNix (packageDescription gpd))
                             , "components" $= components ]
     where packageName = fromString . show . disp . pkgName . package . packageDescription $ gpd

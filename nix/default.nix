@@ -1,5 +1,6 @@
 { pkgs ? import <nixpkgs> {}
-, planFile ? ../stackage/lts-11.11.nix
+, planFunc ? import ../stackage/lts-11.4.nix
+, hackage ? import ../hackage
 }:
 
 (pkgs.lib.fix (self: with self; {
@@ -15,17 +16,32 @@
 
   haskellLib = import ./lib.nix { inherit lib haskellLib; };
 
-  hackage = import ../hackage;
-  plan = import planFile (lib.mapAttrs (_: p:
-    lib.mapAttrs (ver: vdata:
-      let revs = builtins.removeAttrs vdata ["revision" "sha256"];
-      in vdata
-        // lib.mapAttrs (_: rev: vdata // {revision = rev;}) revs
-        // lib.mapAttrs' (_: rev:
-            {name = rev.cabalSha256; value = vdata // {revision = rev;};}
-          ) revs
-    ) p
-  ) hackage);
+  plan =
+    let p = planFunc hackageConfigs;
+    in p // {
+      packages = lib.mapAttrs
+        (_: pkg: self:
+          lib.recursiveUpdate (pkg.revision self) { flags = pkg.flags or {}; }
+        ) p.packages;
+    };
+  hackageConfigs =
+    let
+      args = {
+        inherit hsPkgs compiler system pkgconfPkgs;
+        pkgs = adjustedPkgs;
+      };
+      handleVer = vdata:
+        let
+          revs = builtins.removeAttrs vdata ["sha256"];
+          rev2HashedConfig = name: rev: { name = rev.cabalSha256; value = revConfigs.${name}; };
+          revConfigs = lib.mapAttrs (_: rev2config vdata.sha256) revs;
+        in revConfigs // lib.mapAttrs' rev2HashedConfig revs;
+      rev2config = sha256: rev: self: import rev (args // { inherit (self) flags; }) // {
+        inherit sha256;
+        inherit (rev) cabalFile;
+      };
+    in lib.mapAttrs (_: lib.mapAttrs (_: handleVer)) hackage;
+
   new-builder = weakCallPackage pkgs ./new-builder.nix {
     inherit haskellLib ghc weakCallPackage;
   };
@@ -78,14 +94,11 @@
     fftw3 = pkgs.fftw;
   };
 
-  configs = lib.mapAttrs (_: f: import f.revision {
-    inherit hsPkgs compiler system pkgconfPkgs;
-    pkgs = adjustedPkgs;
-  } // {
-    inherit (f) sha256;
-    cabalFile = if f.revision == f.r0 then null else f.revision.cabalFile;
-  }) plan.packages;
+  configs = lib.mapAttrs (_: lib.fix) (plan.packages // {
+    stack = self: let super = plan.packages.stack self; in super // { flags = super.flags // { hide-dependency-versions = true; }; };
+  });
 
-  hsPkgs = lib.mapAttrs (_: _: null) (plan.compiler.packages // { hsc2hs = "0.68.2"; })
+  hsPkgs = adjustedPkgs
+    // lib.mapAttrs (_: _: null) (plan.compiler.packages // { hsc2hs = "0.68.2"; })
     // lib.mapAttrs (_: new-builder) configs;
 }))

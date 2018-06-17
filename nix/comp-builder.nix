@@ -71,7 +71,9 @@ in stdenv.mkDerivation {
   nativeBuildInputs =
     [ghc]
     ++ lib.optional (component.pkgconfig != []) pkgconfig
-    ++ lib.concatMap (c: builtins.attrValues (c.components.exes or {})) component.build-tools;
+    ++ lib.concatMap (c: if c.isHaskell or false
+      then builtins.attrValues (c.components.exes or {})
+      else [c]) component.build-tools;
 
   SETUP_HS = setup + /bin/Setup;
 
@@ -89,7 +91,6 @@ in stdenv.mkDerivation {
 
   buildPhase = ''
     $SETUP_HS build -j$NIX_BUILD_CORES
-    $SETUP_HS haddock
   '';
 
   checkPhase = ''
