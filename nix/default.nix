@@ -99,6 +99,7 @@
   });
 
   hsPkgs = adjustedPkgs
+    // { buildPackages = hsPkgs; }
     // lib.mapAttrs (_: _: null) (plan.compiler.packages // { hsc2hs = "0.68.2"; })
     // lib.mapAttrs (_: new-builder) configs;
 }))
