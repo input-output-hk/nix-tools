@@ -29,8 +29,6 @@ let
   plan = import ./plan.nix;
 
   pkgSet = haskell.mkPkgSet pkgs plan;
-  # pick the repsective stackage version here
-  # and augment them with out packages
 
   packages = pkgSet {
     extraDeps = hsPkgs: { nix-tools = ./nix-tools.nix; }; };
