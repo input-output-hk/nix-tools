@@ -59,8 +59,8 @@ plan2nix (Plan { packages, compilerVersion, compilerPackages }) =
       ]
  where
   bind pkg (Package { packageVersion, packageRevision, packageFlags }) =
-    let verExpr      = mkSym "hackage" @. pkg @. packageVersion
-        revExpr      = maybe verExpr (verExpr @.) packageRevision
+    let verExpr      = mkSym "hackage" @. quoted pkg @. quoted packageVersion
+        revExpr      = maybe verExpr ((verExpr @.) . quoted) packageRevision
         revBinding   = bindPath (quoted pkg :| ["revision"]) revExpr
         flagBindings = Map.foldrWithKey
           (\fname val acc -> bindPath (quoted pkg :| ["flags", fname]) (mkBool val) : acc)
