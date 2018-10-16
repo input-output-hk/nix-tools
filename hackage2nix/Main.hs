@@ -50,15 +50,14 @@ main = do
 
   let (defaultNix, cabalFiles) =
         runState (fmap seqToSet $ foldMapWithKeyA package2nix db) mempty
-      hackageOut = out </> "hackage"
 
   createDirectoryIfMissing False out
   writeFile (out </> "default.nix") $ show $ prettyNix defaultNix
-  createDirectoryIfMissing False hackageOut
+  createDirectoryIfMissing False (out </> "hackage")
 
   for_ cabalFiles $ \(cabalFile, pname, path) -> do
     gpd <- cabal2nix Nothing $ InMemory Nothing pname $ BL.toStrict cabalFile
-    writeFile (hackageOut </> path) $ show $ prettyNix gpd
+    writeFile (out </> path) $ show $ prettyNix gpd
 
 type GPDWriter = State (Seq (BL.ByteString, String, FilePath))
 
@@ -95,31 +94,30 @@ version2nix pname vnum (U.VersionData { U.cabalFileRevisions, U.metaFile }) =
       [ "sha256" $= mkStr
         (fromString $ P.parseMetaData pname vnum metaFile Map.! "sha256")
       , "revisions" $= mkNonRecSet
-        (  fmap snd revisionBindings
+        (  fmap (uncurry ($=)) revisionBindings
         ++ ["default" $= (mkSym "revisions" @. fst (last revisionBindings))]
         )
       ]
-
-revName :: Integer -> String
-revName revNum = "r" <> fromString (show revNum)
 
 revBinding
   :: PackageName
   -> Version
   -> BL.ByteString
   -> Integer
-  -> GPDWriter (Text, Binding NExpr)
+  -> GPDWriter (Text, NExpr)
 revBinding pname vnum cabalFile revNum = do
-  let qualifiedName = mconcat
-        (intersperse
-          "-"
-          [prettyPname, fromPretty vnum, revName revNum, BS.unpack cabalHash]
-        )
+  let qualifiedName = mconcat $ intersperse
+        "-"
+        [prettyPname, fromPretty vnum, revName, BS.unpack cabalHash]
+      revName :: (Semigroup a, IsString a) => a
+      revName     = "r" <> fromString (show revNum)
       revPath     = "." </> "hackage" </> qualifiedName <.> "nix"
       prettyPname = fromPretty pname
       cabalHash   = Base16.encode $ hashlazy cabalFile
-      key         = quoted (decodeUtf8 cabalHash)
   modify' $ mappend $ Seq.singleton
     (cabalFile, prettyPname ++ ".cabal", revPath)
-  return $ (,) key $ key $= mkNonRecSet
-    ["outPath" $= mkRelPath revPath, "revNum" $= mkInt revNum]
+  return $ (,) revName $ mkNonRecSet
+    [ "outPath" $= mkRelPath revPath
+    , "revNum" $= mkInt revNum
+    , "sha256" $= mkStr (decodeUtf8 cabalHash)
+    ]
