@@ -60,7 +60,7 @@ data CabalFileGenerator
 
 data CabalFile
   = OnDisk FilePath
-  | InMemory CabalFileGenerator FilePath ByteString
+  | InMemory (Maybe CabalFileGenerator) FilePath ByteString
   deriving Show
 
 
@@ -78,7 +78,7 @@ cabal2nix :: Maybe Src -> CabalFile -> IO NExpr
 cabal2nix src = \case
   (OnDisk path) -> fmap (gpd2nix src Nothing)
     $ readGenericPackageDescription normal path
-  (InMemory gen path body) -> fmap (gpd2nix src (Just $ genExtra gen))
+  (InMemory gen _ body) -> fmap (gpd2nix src (genExtra <$> gen))
     $ maybe (error "Failed to parse in-memory cabal file") pure (parseGenericPackageDescriptionMaybe body)
 
 gpd2nix :: Maybe Src -> Maybe NExpr -> GenericPackageDescription -> NExpr
