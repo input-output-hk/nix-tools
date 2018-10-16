@@ -12,7 +12,11 @@
 }@config:
 
 let
-  cabalFile = null;
+  cabalFile = if revision == null || revision == 0 then null else
+    fetchurl {
+      url = "https://hackage.haskell.org/package/${name}/revision/${toString revision}.cabal";
+      sha256 = revisionSha256;
+    };
   defaultSetupSrc = builtins.toFile "Setup.hs" ''
     import Distribution.Simple
     main = defaultMain
