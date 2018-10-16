@@ -50,12 +50,15 @@ main = do
 
   let (defaultNix, cabalFiles) =
         runState (fmap seqToSet $ foldMapWithKeyA package2nix db) mempty
+      hackageOut = out </> "hackage"
+
   createDirectoryIfMissing False out
   writeFile (out </> "default.nix") $ show $ prettyNix defaultNix
+  createDirectoryIfMissing False hackageOut
 
   for_ cabalFiles $ \(cabalFile, pname, path) -> do
     gpd <- cabal2nix Nothing $ InMemory Nothing pname $ BL.toStrict cabalFile
-    writeFile (out </> path) $ show $ prettyNix gpd
+    writeFile (hackageOut </> path) $ show $ prettyNix gpd
 
 type GPDWriter = State (Seq (BL.ByteString, String, FilePath))
 
@@ -112,7 +115,7 @@ revBinding pname vnum cabalFile revNum = do
           "-"
           [prettyPname, fromPretty vnum, revName revNum, BS.unpack cabalHash]
         )
-      revPath     = "." </> qualifiedName <.> "nix"
+      revPath     = "." </> "hackage" </> qualifiedName <.> "nix"
       prettyPname = fromPretty pname
       cabalHash   = Base16.encode $ hashlazy cabalFile
       key         = quoted (decodeUtf8 cabalHash)
