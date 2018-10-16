@@ -7,10 +7,12 @@
 , name ? "${package.identifier.name}-${package.identifier.version}"
 , sha256 ? null
 , src ? fetchurl { url = "mirror://hackage/${name}.tar.gz"; inherit sha256; }
-, cabalFile ? null
+, revision ? null
+, revisionSha256 ? null
 }@config:
 
 let
+  cabalFile = null;
   defaultSetupSrc = builtins.toFile "Setup.hs" ''
     import Distribution.Simple
     main = defaultMain
