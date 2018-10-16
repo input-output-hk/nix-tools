@@ -15,7 +15,7 @@ import qualified Data.Text                     as Text
 import           Nix.Expr
 
 type Version = Text
-type Revision = Text -- Can be: rNUM, cabal file sha256, or "revision"
+type Revision = Text -- Can be: rNUM, cabal file sha256, or "default"
 
 data Plan = Plan
   { packages :: HashMap Text Package
@@ -59,11 +59,11 @@ plan2nix (Plan { packages, compilerVersion, compilerPackages }) =
       ]
  where
   bind pkg (Package { packageVersion, packageRevision, packageFlags }) =
-    let verExpr      = mkSym "hackage" @. quoted pkg @. quoted packageVersion
-        revExpr      = maybe verExpr ((verExpr @.) . quoted) packageRevision
-        revBinding   = bindPath (quoted pkg :| ["revision"]) revExpr
+    let verExpr      = mkSym "hackage" @. pkg @. quoted packageVersion
+        revExpr      = verExpr @. "revisions" @. maybe "default" quoted packageRevision
+        revBinding   = bindPath (pkg :| ["revision"]) revExpr
         flagBindings = Map.foldrWithKey
-          (\fname val acc -> bindPath (quoted pkg :| ["flags", fname]) (mkBool val) : acc)
+          (\fname val acc -> bindPath (pkg :| ["flags", fname]) (mkBool val) : acc)
           []
           packageFlags
     in  revBinding : flagBindings
