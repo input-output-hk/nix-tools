@@ -4,4 +4,5 @@ lib: with lib.licenses;
   BSD-3-Clause = bsd3;
   MIT = mit;
   ISC = isc;
+  LicenseRef-LGPL = "LGPL";
 }

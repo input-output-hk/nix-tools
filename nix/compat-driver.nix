@@ -5,7 +5,7 @@ lib.fix (hsPkgs: pkgs.callPackage "${pkgs.path}/pkgs/development/haskell-modules
   inherit ghc;
   buildHaskellPackages = hsPkgs;
   compilerConfig = _: _: lib.mapAttrs (_: _: null) (builtins.removeAttrs plan.compiler.packages ["ghc"]);
-  initialPackages = self: _:
+  initialPackages = args: self:
     lib.mapAttrs
       (_: pkg: self.callPackage ./driver.nix { expr = lib.fix pkg; inherit lib; })
       (plan.packages self);
