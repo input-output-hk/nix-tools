@@ -1,6 +1,7 @@
 { pkgs ? import <nixpkgs> {}
 , planFunc ? import ../stackage/lts-11.4.nix
 , hackage ? import ../hackage
+, driver ? ./component-driver.nix
 }:
 
 (pkgs.lib.fix (self: with self; {
@@ -41,15 +42,15 @@
             in lib.mapAttrs (_: rev2Config) (version.revisions // contentAddressedRevs);
         }));
   plan =
-    let
-      args = {
-        inherit hsPkgs compiler system pkgconfPkgs;
-        pkgs = adjustedPkgs;
-      };
-      p = planFunc hackageConfigs;
+    let p = planFunc hackageConfigs;
     in p // {
-      packages = lib.mapAttrs
-        (pname: { revision, flags ? {} }: self:
+      packages = hsPkgs:
+        let 
+          args = {
+            inherit hsPkgs compiler system pkgconfPkgs;
+            pkgs = adjustedPkgs;
+          };
+        in lib.mapAttrs (pname: { revision, flags ? {} }: self:
           # Set the flags with the rhs of the recursiveUpdate, but
           # pass the final choice in flags using open recursion.
           lib.recursiveUpdate (import revision (args // { inherit (self) flags; })) {
@@ -60,9 +61,6 @@
         p.packages;
     };
 
-  new-builder = weakCallPackage pkgs ./new-builder.nix {
-    inherit haskellLib ghc weakCallPackage;
-  };
   cabal = import ./cabal-os-arch-comp.nix;
 
   compiler = cabal.compiler // {
@@ -112,12 +110,12 @@
     fftw3 = pkgs.fftw;
   };
 
-  configs = lib.mapAttrs (_: lib.fix) (plan.packages // {
-    stack = self: let super = plan.packages.stack self; in super // { flags = super.flags // { hide-dependency-versions = true; }; };
-  });
+  # hsPkgs = adjustedPkgs
+  #   // { buildPackages = hsPkgs; }
+  #   // lib.mapAttrs (_: _: null) (plan.compiler.packages // { hsc2hs = "0.68.2"; })
+  #   // lib.mapAttrs (_: driver) configs;
 
-  hsPkgs = adjustedPkgs
-    // { buildPackages = hsPkgs; }
-    // lib.mapAttrs (_: _: null) (plan.compiler.packages // { hsc2hs = "0.68.2"; })
-    // lib.mapAttrs (_: new-builder) configs;
+  hsPkgs = weakCallPackage pkgs driver {
+    inherit haskellLib ghc weakCallPackage plan;
+  };
 }))
