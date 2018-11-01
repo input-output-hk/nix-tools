@@ -1,4 +1,5 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ args ? { crossSystem = (import <nixpkgs> {}).lib.systems.examples.mingwW64; }
+, pkgs ? import <nixpkgs> args }:
 let
  hsPkgs = import ./pkgs.nix { inherit pkgs; };
 in

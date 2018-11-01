@@ -1,6 +1,9 @@
 hackage:
   {
     packages = {
+      Win32.revision = hackage.Win32."2.7.0.0".revisions.default;
+      mintty.revision = hackage.mintty."0.1.2".revisions.default;
+
       http-client.revision = hackage.http-client."0.5.13.1".revisions.default;
       http-client.flags.network-uri = true;
       semigroupoids.revision = hackage.semigroupoids."5.3.1".revisions.default;
@@ -42,7 +45,7 @@ hackage:
       x509-validation.revision = hackage.x509-validation."1.6.10".revisions.default;
       extra.revision = hackage.extra."1.6.13".revisions.default;
       hourglass.revision = hackage.hourglass."0.2.12".revisions.default;
-      unix.revision = hackage.unix."2.7.2.2".revisions.default;
+#      unix.revision = hackage.unix."2.7.2.2".revisions.default;
       haskeline.revision = hackage.haskeline."0.7.4.3".revisions.default;
       haskeline.flags.terminfo = true;
       hashing.revision = hackage.hashing."0.1.0.1".revisions.default;
