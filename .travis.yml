@@ -9,7 +9,7 @@ matrix:
 
 script:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then cat .travis.nix.conf | sudo tee -a  /etc/nix/nix.conf; fi
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sudo pkill nix-daemon && sudo nix-daemon &; fi
+- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then sudo pkill nix-daemon && sudo nix-daemon & ; fi
 - nix-env -iA cachix -f https://github.com/NixOS/nixpkgs/tarball/889c72032f8595fcd7542c6032c208f6b8033db6
 - cachix use nix-tools
 - # sudo cachix use nix-tools
