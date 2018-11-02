@@ -23,7 +23,7 @@ script:
   nix-build
   -I nixpkgs=https://github.com/NixOS/nixpkgs-channels/archive/${CHANNEL}.tar.gz
   -A nix-tools-all-execs
-  --cores 0
+  --cores 0;
   fi
 
 env:
