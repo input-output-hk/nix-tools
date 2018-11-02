@@ -15,6 +15,7 @@ script:
   && sudo launchctl stop org.nixos.nix-daemon
   && sudo launchctl start org.nixos.nix-daemon
   fi
+- sudo cat /etc/nix/nix.conf
 - if [[ $TRAVIS_SECURE_ENV_VARS ]]; then
   nix-build
   -I nixpkgs=https://github.com/NixOS/nixpkgs-channels/archive/${CHANNEL}.tar.gz
