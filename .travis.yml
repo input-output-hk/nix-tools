@@ -8,7 +8,10 @@ matrix:
       env: CHANNEL=nixos-18.09
 
 script:
+- sudo cat .travis.nix.conf >> /etc/nix/nix.conf
 - sudo cat /etc/nix/nix.conf
+- sudo pkill nix-daemon
+- sudo nix-daemon &
 - nix-env -iA cachix -f https://github.com/NixOS/nixpkgs/tarball/889c72032f8595fcd7542c6032c208f6b8033db6
 - cachix use nix-tools
 - sudo cachix use nix-tools
