@@ -8,15 +8,18 @@ matrix:
       env: CHANNEL=nixos-18.09
 
 script:
-- if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
+- if [[ "$TRAVIS_OS_NAME" == "osx" && false ]]; then
   echo "trusted-users = root $USER"
   | sudo tee -a /etc/nix/nix.conf
   && sudo cat /etc/nix/nix.conf
   && sudo pkill nix-daemon
+  && sudo nix-daemon
   && sleep 5;
   fi
+- sudo cat /etc/nix/nix.conf
 - nix-env -iA cachix -f https://github.com/NixOS/nixpkgs/tarball/889c72032f8595fcd7542c6032c208f6b8033db6
 - cachix use nix-tools
+- sudo cachix use nix-tools
 - if [[ $TRAVIS_SECURE_ENV_VARS ]]; then
   nix-build
   -I nixpkgs=https://github.com/NixOS/nixpkgs-channels/archive/${CHANNEL}.tar.gz
