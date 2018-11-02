@@ -15,7 +15,7 @@ script:
   -A nix-tools-all-execs
   --cores 0
   --option trusted-users "root $USER"
-  --option substituters "https://cache.nixos.org/ https://nix-tools.cachix.org/"
+  --option substituters "https://cache.nixos.org/ https://nix-tools.cachix.org"
   --option trusted-public-keys "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-tools.cachix.org-1:ebBEBZLogLxcCvipq2MTvuHlP7ZRdkazFSQsbs0Px1A="
   | cachix push nix-tools;
   else
@@ -24,7 +24,7 @@ script:
   -A nix-tools-all-execs
   --cores 0
   --option trusted-users "root $USER"
-  --option substituters "https://cache.nixos.org/ https://nix-tools.cachix.org/"
+  --option substituters "https://cache.nixos.org/ https://nix-tools.cachix.org"
   --option trusted-public-keys "cache.nixos.org-1:6NCHdD59X431o0gWypbMrAURkbJ16ZPMQFGspcDShjY= nix-tools.cachix.org-1:ebBEBZLogLxcCvipq2MTvuHlP7ZRdkazFSQsbs0Px1A=";
   fi
 
