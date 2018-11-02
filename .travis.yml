@@ -13,7 +13,7 @@ script:
 - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then
   echo "trusted-users = root $USER" | sudo tee -a /etc/nix/nix.conf
   && sudo launchctl stop org.nixos.nix-daemon
-  && sudo launchctl start org.nixos.nix-daemon
+  && sudo launchctl start org.nixos.nix-daemon;
   fi
 - sudo cat /etc/nix/nix.conf
 - if [[ $TRAVIS_SECURE_ENV_VARS ]]; then
