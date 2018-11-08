@@ -138,5 +138,8 @@ executable stack-to-nix
                      , hpack
                      , bytestring
                      , optparse-applicative
+                     , http-client-tls
+                     , http-client
+                     , http-types
   hs-source-dirs:      stack2nix
   default-language:    Haskell2010
