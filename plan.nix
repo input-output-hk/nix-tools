@@ -36,6 +36,7 @@ hackage:
       basement.revision = hackage.basement."0.0.8".revisions.default;
       ansi-wl-pprint.revision = hackage.ansi-wl-pprint."0.6.8.2".revisions.default;
       ansi-wl-pprint.flags.example = false;
+      prettyprinter.revision = hackage.prettyprinter."1.2.1".revisions.default;
       logict.revision = hackage.logict."0.6.0.2".revisions.default;
       data-fix.revision = hackage.data-fix."0.2.0".revisions.default;
       case-insensitive.revision = hackage.case-insensitive."1.2.0.11".revisions.default;
@@ -338,6 +339,7 @@ hackage:
             lens-family = dontCheck' (super.lens-family);
             basement = dontCheck' (super.basement);
             ansi-wl-pprint = dontCheck' (super.ansi-wl-pprint);
+            prettyprinter = dontCheck' (super.prettyprinter);
             logict = dontCheck' (super.logict);
             data-fix = dontCheck' (super.data-fix);
             case-insensitive = dontCheck' (super.case-insensitive);

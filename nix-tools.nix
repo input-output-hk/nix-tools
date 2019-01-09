@@ -55,7 +55,7 @@
             (hsPkgs.nix-tools)
             (hsPkgs.filepath)
             (hsPkgs.directory)
-            (hsPkgs.ansi-wl-pprint)
+            (hsPkgs.prettyprinter)
           ];
         };
         "hashes-to-nix" = {
@@ -131,7 +131,7 @@
             (hsPkgs.text)
             (hsPkgs.Cabal)
             (hsPkgs.vector)
-            (hsPkgs.ansi-wl-pprint)
+            (hsPkgs.prettyprinter)
             (hsPkgs.directory)
             (hsPkgs.filepath)
             (hsPkgs.extra)
