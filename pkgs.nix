@@ -14,16 +14,16 @@ let
   hackage = import (overrideWith "hackage"
                    (pkgs.fetchFromGitHub { owner  = "angerman";
                                            repo   = "hackage.nix";
-                                           rev    = "66c28064da46525711722b75b4adb2ac878897d3";
-                                           sha256 = "12ffzzjgirwzha3ngxbniccgn19406iryxspq19kgi4kz9lz6bpr";
+                                           rev    = "15155a37d3a40173b57e93b09453984fac614523";
+                                           sha256 = "016538bfnlb0dxdga4n5p0m75zq0zymbdh5vrvr0gwsa7pywi7zy";
                                            name   = "hackage-exprs-source"; }))
                    ;
   # a different haskell infrastructure
   haskell = import (overrideWith "haskell"
                     (pkgs.fetchFromGitHub { owner  = "angerman";
                                             repo   = "haskell.nix";
-                                            rev    = "2a3b2612a15fd7f14d32c3519aba2b64bd7b1e43";
-                                            sha256 = "181dv1zlf381kkb82snjmpibhgmkyw1n5qsvpqjrv8dxmcjqjl2k";
+                                            rev    = "ed1dbc01f98411894f6613c62818f14b02fb6679";
+                                            sha256 = "0kbj4kb9rlvjb4afpcisz9zlk5z3h7frkwggfwri1q5683fapkgv";
                                             name   = "haskell-lib-source"; }))
                    hackage;
 
