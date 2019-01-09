@@ -48,7 +48,7 @@ hackage:
       haskeline.flags.terminfo = true;
       hashing.revision = hackage.hashing."0.1.0.1".revisions.default;
       split.revision = hackage.split."0.2.3.3".revisions.default;
-      stm.revision = hackage.stm."2.5.0.0".revisions.default;
+      stm.revision = hackage.stm."2.4.5.1".revisions.default;
       Cabal.revision = hackage.Cabal."2.2.0.1".revisions.default;
       base.revision = hackage.base."4.11.1.0".revisions.default;
       data-default-class.revision = hackage.data-default-class."0.1.2.0".revisions.default;
@@ -83,7 +83,7 @@ hackage:
       invariant.revision = hackage.invariant."0.5.1".revisions.default;
       clock.revision = hackage.clock."0.7.2".revisions.default;
       clock.flags.llvm = false;
-      megaparsec.revision = hackage.megaparsec."6.5.0".revisions.default;
+      megaparsec.revision = hackage.megaparsec."7.0.4".revisions.default;
       megaparsec.flags.dev = false;
       th-orphans.revision = hackage.th-orphans."0.13.6".revisions.default;
       syb.revision = hackage.syb."0.7".revisions.default;
@@ -150,10 +150,12 @@ hackage:
       unliftio-core.revision = hackage.unliftio-core."0.1.2.0".revisions.default;
       base-compat.revision = hackage.base-compat."0.10.4".revisions.default;
       x509-system.revision = hackage.x509-system."1.6.6".revisions.default;
-      hnix.revision = hackage.hnix."0.5.2".revisions.default;
+      hnix.revision = (import ./hnix.nix);
       hnix.flags.tracing = false;
       hnix.flags.profiling = false;
       hnix.flags.optimize = false;
+      dependent-sum.revision = hackage.dependent-sum."0.4".revisions.default;
+      ref-tf.revision = hackage.ref-tf."0.4.0.1".revisions.default;
       tar.revision = hackage.tar."0.5.1.0".revisions.default;
       tar.flags.old-time = false;
       tar.flags.old-bytestring = false;
