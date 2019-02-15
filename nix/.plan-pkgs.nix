@@ -4,6 +4,9 @@
       packages = {
         "criterion-measurement".revision = (((hackage."criterion-measurement")."0.1.1.0").revisions).default;
         "criterion-measurement".flags.fast = false;
+        "test-framework-hunit".revision = (((hackage."test-framework-hunit")."0.3.0.2").revisions).default;
+        "test-framework-hunit".flags.base4 = true;
+        "test-framework-hunit".flags.base3 = false;
         "http-client".revision = (((hackage."http-client")."0.6.1").revisions).default;
         "http-client".flags.network-uri = true;
         "cookie".revision = (((hackage."cookie")."0.4.4").revisions).default;
@@ -54,6 +57,7 @@
         "base-compat-batteries".revision = (((hackage."base-compat-batteries")."0.10.5").revisions).default;
         "hourglass".revision = (((hackage."hourglass")."0.2.12").revisions).default;
         "case-insensitive".revision = (((hackage."case-insensitive")."1.2.0.11").revisions).default;
+        "extensible-exceptions".revision = (((hackage."extensible-exceptions")."0.1.1.4").revisions).default;
         "unix".revision = (((hackage."unix")."2.7.2.2").revisions).default;
         "mtl".revision = (((hackage."mtl")."2.2.2").revisions).default;
         "network-uri".revision = (((hackage."network-uri")."2.6.1.0").revisions).default;
@@ -68,6 +72,9 @@
         "js-flot".revision = (((hackage."js-flot")."0.8.3").revisions).default;
         "statistics".revision = (((hackage."statistics")."0.15.0.0").revisions).default;
         "th-expand-syns".revision = (((hackage."th-expand-syns")."0.4.4.0").revisions).default;
+        "regex-posix".revision = (((hackage."regex-posix")."0.95.2").revisions).default;
+        "regex-posix".flags.splitbase = true;
+        "regex-posix".flags.newbase = true;
         "cryptonite".revision = (((hackage."cryptonite")."0.25").revisions).default;
         "cryptonite".flags.support_sse = false;
         "cryptonite".flags.integer-gmp = true;
@@ -125,6 +132,7 @@
         "semigroups".flags.transformers = true;
         "semigroups".flags.deepseq = true;
         "semigroups".flags.bytestring-builder = false;
+        "HUnit".revision = (((hackage."HUnit")."1.6.0.0").revisions).default;
         "vector-instances".revision = (((hackage."vector-instances")."3.4").revisions).default;
         "vector-instances".flags.hashable = true;
         "parsec".revision = (((hackage."parsec")."3.1.13.0").revisions).default;
@@ -173,7 +181,7 @@
         "x509".revision = (((hackage."x509")."1.7.5").revisions).default;
         "cassava".revision = (((hackage."cassava")."0.5.1.0").revisions).default;
         "cassava".flags.bytestring--lt-0_10_4 = false;
-        "haskell-src-exts".revision = (((hackage."haskell-src-exts")."1.21.0").revisions).default;
+        "haskell-src-exts".revision = (((hackage."haskell-src-exts")."1.20.3").revisions).default;
         "lens".revision = (((hackage."lens")."4.17").revisions).default;
         "lens".flags.j = false;
         "lens".flags.test-properties = true;
@@ -210,9 +218,12 @@
         "ansi-wl-pprint".flags.example = false;
         "mwc-random".revision = (((hackage."mwc-random")."0.14.0.0").revisions).default;
         "basement".revision = (((hackage."basement")."0.0.9").revisions).default;
+        "test-framework".revision = (((hackage."test-framework")."0.8.2.0").revisions).default;
         "cryptohash-sha1".revision = (((hackage."cryptohash-sha1")."0.11.100.1").revisions).default;
         "serialise".revision = (((hackage."serialise")."0.2.1.0").revisions).default;
         "serialise".flags.newtime15 = true;
+        "hostname".revision = (((hackage."hostname")."1.0").revisions).default;
+        "old-locale".revision = (((hackage."old-locale")."1.0.0.7").revisions).default;
         "StateVar".revision = (((hackage."StateVar")."1.1.1.1").revisions).default;
         "mime-types".revision = (((hackage."mime-types")."0.1.0.9").revisions).default;
         "http-client-tls".revision = (((hackage."http-client-tls")."0.3.5.3").revisions).default;
@@ -264,7 +275,7 @@
         "prettyprinter".revision = (((hackage."prettyprinter")."1.2.1").revisions).default;
         "prettyprinter".flags.buildreadme = false;
         "cryptohash-sha512".revision = (((hackage."cryptohash-sha512")."0.11.100.1").revisions).default;
-        "pretty-show".revision = (((hackage."pretty-show")."1.9.5").revisions).default;
+        "pretty-show".revision = (((hackage."pretty-show")."1.8.2").revisions).default;
         "transformers".revision = (((hackage."transformers")."0.5.5.0").revisions).default;
         "hashable".revision = (((hackage."hashable")."1.2.7.0").revisions).default;
         "hashable".flags.sse2 = true;
@@ -359,5 +370,12 @@
         };
       };
   overlay = hackage:
-    { nix-tools = ./.plan.nix/nix-tools.nix; };
+    {
+      packages = {
+        nix-tools = ./.plan.nix/nix-tools.nix;
+        hackage-db = ./.plan.nix/hackage-db.nix;
+        hnix = ./.plan.nix/hnix.nix;
+        haskell-src-meta = ./.plan.nix/haskell-src-meta.nix;
+        };
+      };
   }

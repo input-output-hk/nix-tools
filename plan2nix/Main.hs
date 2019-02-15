@@ -33,10 +33,10 @@ planPackages planJSON = do
   evalue <- eitherDecodeFileStrict planJSON
   case evalue of
     Left  e     -> error (show e)
-    Right value -> pure $ plan2nix $ value2plan value
+    Right value -> plan2nix $ value2plan value
 
 value2plan :: Value -> Plan
-value2plan plan = Plan { packages, compilerVersion, compilerPackages }
+value2plan plan = Plan { packages, overlays, compilerVersion, compilerPackages }
  where
   packages = fmap Just $ filterInstallPlan $ \pkg -> case ( pkg ^. key "type" . _String
                                               , pkg ^. key "style" . _String) of
@@ -44,6 +44,13 @@ value2plan plan = Plan { packages, compilerVersion, compilerPackages }
       { packageVersion  = pkg ^. key "pkg-version" . _String
       , packageRevision = Nothing
       , packageFlags    = Map.mapMaybe (^? _Bool) $ pkg ^. key "flags" . _Object
+      , packageSrc      = Nothing
+      }
+    (_, "inplace") -> Just $ Package
+      { packageVersion  = pkg ^. key "pkg-version" . _String
+      , packageRevision = Nothing
+      , packageFlags    = Map.mapMaybe (^? _Bool) $ pkg ^. key "flags" . _Object
+      , packageSrc      = Nothing
       }
     -- Until we figure out how to force Cabal to reconfigure just about any package
     -- this here might be needed, so that we get the pre-existing packages as well.
@@ -55,8 +62,30 @@ value2plan plan = Plan { packages, compilerVersion, compilerPackages }
       { packageVersion  = pkg ^. key "pkg-version" . _String
       , packageRevision = Nothing
       , packageFlags    = Map.empty
+      , packageSrc      = Nothing
       }
     _ -> Nothing
+
+  overlays = fmap Just $ filterInstallPlan $ \pkg -> case ( pkg ^. key "type" . _String
+                                                          , pkg ^. key "style" . _String
+                                                          , pkg ^. key "pkg-src" . key "type" . _String
+                                                          , pkg ^. key "pkg-src" . _Object) of
+    (_, "local", "local", _) -> Just $ Package
+      { packageVersion  = pkg ^. key "pkg-version" . _String
+      , packageRevision = Nothing
+      , packageFlags    = Map.mapMaybe (^? _Bool) $ pkg ^. key "flags" . _Object
+      , packageSrc      = Just . LocalPath $ pkg ^. key "pkg-src" . key "path" . _String
+      }
+    (_, "local", "source-repo", _) -> Just $ Package
+      { packageVersion  = pkg ^. key "pkg-version" . _String
+      , packageRevision = Nothing
+      , packageFlags    = Map.mapMaybe (^? _Bool) $ pkg ^. key "flags" . _Object
+      , packageSrc      = Just . flip DVCS ["."] $
+          Git ( Text.unpack $ pkg ^. key "pkg-src" . key "source-repo" . key "location" . _String )
+              ( Text.unpack $ pkg ^. key "pkg-src" . key "source-repo" . key "tag" . _String )
+      }
+    _ -> Nothing
+
   compilerVersion  = Text.dropWhile (not . isDigit) $ plan ^. key "compiler-id" . _String
   compilerPackages = fmap Just $ filterInstallPlan $ \pkg -> if isJust (pkg ^? key "style" . _String)
     then Nothing

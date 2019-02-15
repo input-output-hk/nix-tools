@@ -29,7 +29,7 @@ ltsPackages lts = do
   evalue <- decodeFileEither lts
   case evalue of
     Left  e     -> error (show e)
-    Right value -> pure $ plan2nix $ lts2plan value
+    Right value -> plan2nix $ lts2plan value
 
 lts2plan :: Value -> Plan
 lts2plan lts = Plan { packages , compilerVersion , compilerPackages }
