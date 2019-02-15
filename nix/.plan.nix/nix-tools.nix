@@ -33,7 +33,6 @@
           (hsPkgs.cryptohash-sha256)
           (hsPkgs.base16-bytestring)
           (hsPkgs.hpack)
-          (hsPkgs.prettyprinter)
           ];
         };
       exes = {
@@ -70,6 +69,7 @@
             (hsPkgs.base)
             (hsPkgs.nix-tools)
             (hsPkgs.hnix)
+            (hsPkgs.Cabal)
             (hsPkgs.text)
             (hsPkgs.hpack)
             (hsPkgs.unordered-containers)
@@ -77,6 +77,13 @@
             (hsPkgs.aeson)
             (hsPkgs.microlens)
             (hsPkgs.microlens-aeson)
+            (hsPkgs.optparse-applicative)
+            (hsPkgs.prettyprinter)
+            (hsPkgs.filepath)
+            (hsPkgs.directory)
+            (hsPkgs.bytestring)
+            (hsPkgs.transformers)
+            (hsPkgs.extra)
             ];
           };
         "hackage-to-nix" = {
@@ -139,4 +146,4 @@
           };
         };
       };
-    } // rec { src = (pkgs.lib).mkDefault ./out/../.; }
+    } // rec { src = (pkgs.lib).mkDefault .././../.; }

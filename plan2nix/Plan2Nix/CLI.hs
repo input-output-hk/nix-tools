@@ -12,6 +12,7 @@ import Data.Semigroup ((<>))
 data Args = Args
   { argOutputDir :: FilePath
   , argPlanJSON :: FilePath
+  , argCabalProject :: FilePath
   , argCacheFile :: FilePath
   } deriving Show
 
@@ -19,7 +20,8 @@ data Args = Args
 args :: Parser Args
 args = Args
   <$> strOption ( long "output" <> short 'o' <> metavar "DIR" <> help "Generate output in DIR" )
-  <*> strOption ( long "plan-json" <> value "dist-newstyle/cache/plan.json" <> showDefault <> metavar "FILE" <> help "Override project plan.json" )
+  <*> strOption ( long "plan-json" <> value "dist-newstyle/cache/plan.json" <> showDefault <> metavar "FILE" <> help "Override plan.json location" )
+  <*> strOption ( long "cabal-project" <> value "cabal.project" <> showDefault <> metavar "FILE" <> help "Override path to cabal.project" )
   <*> strOption ( long "cache" <> value ".nix-tools.cache" <> showDefault <> metavar "FILE" <> help "Dependency cache file" )
 
 parsePlan2NixArgs :: IO Args

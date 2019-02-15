@@ -85,7 +85,7 @@ plan2nix args (Plan { packages, overlays, compilerVersion, compilerPackages }) =
          forM cabalFiles $ \cabalFile ->
            let pkg = cabalFilePkgName cabalFile
                nix = ".plan.nix" </> pkg <.> "nix"
-               nixFile = "nix" </> nix
+               nixFile = argOutputDir args </> nix
                src = Just . C2N.Path $ relPath </> ".." </> (shortRelativePath cwd folder)
            in do createDirectoryIfMissing True (takeDirectory nixFile)
                  writeDoc nixFile =<<
@@ -131,7 +131,7 @@ plan2nix args (Plan { packages, overlays, compilerVersion, compilerPackages }) =
   bind' pkg ver = pkg $= maybe mkNull mkStr ver
   mapKeys f = Map.fromList . fmap (\(k, v) -> (f k, v)) . Map.toList
 
-  relPath = "out" -- shortRelativePath (outputPath args) (dropFileName (stackFile args))
+  relPath = shortRelativePath (argOutputDir args) (dropFileName (argCabalProject args))
   cabalFromPath
           :: String    -- URL
           -> String    -- Revision
@@ -146,7 +146,7 @@ plan2nix args (Plan { packages, overlays, compilerVersion, compilerPackages }) =
             forM cabalFiles $ \cabalFile -> do
             let pkg = cabalFilePkgName cabalFile
                 nix = ".plan.nix" </> pkg <.> "nix"
-                nixFile = "nix" </> nix -- outputPath args </> nix
+                nixFile = argOutputDir args </> nix
                 subdir' = if subdir == "." then Nothing
                           else Just subdir
                 src = Just $ C2N.Git url rev (Just sha256) subdir'
@@ -225,8 +225,8 @@ defaultNixContents = unlines $
   , "let"
   , "  haskell = import (builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/master.tar.gz) { inherit pkgs; };"
   , ""
-  , "  pkgSet = haskell.mkStackPkgSet {"
-  , "    stack-pkgs = import ./pkgs.nix;"
+  , "  pkgSet = haskell.mkCabalProjectPkgSet {"
+  , "    plan-pkgs = import ./pkgs.nix;"
   , "    pkg-def-overlays = [];"
   , "    modules = [];"
   , "  };"
