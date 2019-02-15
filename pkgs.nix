@@ -12,13 +12,6 @@ let
     pkg-def = plan.pkgs;
     pkg-def-overlays = [
       plan.overlay
-#      { nix-tools  = ./nix-tools.nix;
-#        # these are generated with cabal-to-nix
-#        # $ cabal-to-nix https://github.com/galenhuntington/haskell-src-meta.git 109ee29d5fd0f4e23fdd2f80eb122d66341b64a9 > haskell-src-meta.nix
-#        hackage-db       = ./hackage-db.nix;
-#        haskell-src-meta = ./haskell-src-meta.nix;
-#        hnix             = ./hnix.nix;
-#      }
     ];
     modules = [
       # specific package overrides would go here
