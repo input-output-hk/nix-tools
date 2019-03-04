@@ -12,6 +12,8 @@ import Data.Char (toUpper)
 import System.FilePath
 import Data.ByteString (ByteString)
 
+import Distribution.Compat.Lens
+import qualified Distribution.Types.BuildInfo.Lens as L
 import Distribution.Types.CondTree
 import Distribution.Types.Library
 import Distribution.Types.ForeignLib
@@ -74,6 +76,11 @@ cabalFilePkgName = dropExtension . takeFileName . cabalFilePath
 genExtra :: CabalFileGenerator -> NExpr
 genExtra Hpack = mkNonRecSet [ "cabal-generator" $= mkStr "hpack" ]
 
+amendGpdForGen :: CabalFileGenerator -> GenericPackageDescription -> GenericPackageDescription
+amendGpdForGen Hpack gpd =
+  let hpackTool = ExeDependency "hpack" "hpack" anyVersion
+  in gpd & over L.traverseBuildInfos (& L.buildToolDepends %~ (hpackTool:))
+
 cabal2nix :: Maybe Src -> CabalFile -> IO NExpr
 cabal2nix src = \case
   (OnDisk path) -> fmap (gpd2nix src Nothing)
@@ -81,7 +88,9 @@ cabal2nix src = \case
   (InMemory gen _ body) -> fmap (gpd2nix src (genExtra <$> gen))
     $ case (runParseResult (parseGenericPackageDescription body)) of
         (_, Left (_, err)) -> (error ("Failed to parse in-memory cabal file: " ++ show err))
-        (_, Right desc) -> pure desc
+        (_, Right desc) -> case gen of
+          Just g -> pure $ amendGpdForGen g desc
+          Nothing -> pure desc
 
 gpd2nix :: Maybe Src -> Maybe NExpr -> GenericPackageDescription -> NExpr
 gpd2nix src extra gpd = mkFunction args $ toNix gpd $//? (toNix <$> src) $//? extra
