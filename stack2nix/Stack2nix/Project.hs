@@ -18,9 +18,12 @@ import qualified Hpack.Render as Hpack
 
 import Cabal2Nix (CabalFile(..), CabalFileGenerator(..))
 
-findCabalFiles :: FilePath -> IO [CabalFile]
-findCabalFiles path = doesFileExist (path </> Hpack.packageConfig) >>= \case
-  False -> fmap (OnDisk . (path </>)) . filter (isSuffixOf ".cabal") <$> listDirectory path
+import Stack2nix.CLI (HpackUse(..))
+
+findCabalFiles :: HpackUse -> FilePath -> IO [CabalFile]
+findCabalFiles IgnorePackageYaml path = findOnlyCabalFiles path
+findCabalFiles UsePackageYamlFirst path = doesFileExist (path </> Hpack.packageConfig) >>= \case
+  False -> findOnlyCabalFiles path
   True -> do
     mbPkg <- Hpack.readPackageConfig Hpack.defaultDecodeOptions {Hpack.decodeOptionsTarget = path </> Hpack.packageConfig}
     case mbPkg of
@@ -32,3 +35,6 @@ findCabalFiles path = doesFileExist (path </> Hpack.packageConfig) >>= \case
 
   where encodeUtf8 :: String -> ByteString
         encodeUtf8 = T.encodeUtf8 . T.pack
+
+findOnlyCabalFiles :: FilePath -> IO [CabalFile]
+findOnlyCabalFiles path = fmap (OnDisk . (path </>)) . filter (isSuffixOf ".cabal") <$> listDirectory path
