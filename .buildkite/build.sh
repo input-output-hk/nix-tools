@@ -1,5 +1,5 @@
 #! /usr/bin/env nix-shell
-#! nix-shell --pure -i bash -p nix cabal-install ghc nix-prefetch-scripts
+#! nix-shell -I "nixpkgs=channel:nixos-19.03" --pure -i bash -p nix cabal-install ghc nix-prefetch-scripts git
 
 export NIX_PATH="nixpkgs=channel:nixos-19.03"
 
