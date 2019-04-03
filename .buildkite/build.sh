@@ -29,6 +29,10 @@ echo "There are no tests -- https://github.com/input-output-hk/haskell.nix/issue
 echo
 echo "+++ Run plan-to-nix again"
 
+# This file can interfere with the build.
+# https://github.com/input-output-hk/haskell.nix/issues/57
+rm -f .nix-tools.cache
+
 nix build -f nix1 nix-tools.components.exes.plan-to-nix
 ./result/bin/plan-to-nix --output nix2 --plan-json dist-newstyle/cache/plan.json
 
