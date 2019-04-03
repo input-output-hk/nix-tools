@@ -10,7 +10,7 @@ set -euo pipefail
 rm -f .nix-tools.cache
 
 echo "+++ Cabal configure"
-cabal new-update
+cabal new-update --index-state='2019-03-15T00:00:00Z'
 cabal new-configure
 
 echo
