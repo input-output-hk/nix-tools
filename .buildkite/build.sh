@@ -51,4 +51,4 @@ nix build -f test/truncate-index.nix --no-link \
     --arg nix-tools-path ./nix2  \
     --argstr index-state "$index_state" \
     --argstr hash "$expected_hash" \
-    -A indexTruncated
+    indexTruncated
