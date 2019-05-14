@@ -46,7 +46,7 @@ nix build -f nix2 nix-tools.components.exes --no-link
 echo
 echo "--- Test index file truncation"
 
-nix-store --delete /nix/store/*-00-index.tar.gz || true
+find /nix/store/ -name "*-00-index.tar.gz" -exec nix-store --delete {} \;
 nix build -f test/truncate-index.nix --no-link \
     --arg nix-tools-path ./nix2  \
     --argstr index-state "$index_state" \
