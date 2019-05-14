@@ -2,6 +2,8 @@
 #! nix-shell -I "nixpkgs=channel:nixos-19.03" --pure -i bash -p nix cabal-install ghc nix-prefetch-scripts git
 
 export NIX_PATH="nixpkgs=channel:nixos-19.03"
+index_state="2019-03-15T00:00:00Z"
+expected_hash="0ia8zj3la3r3nzyk96abvz2cfm6za9kdbap89v2k95njv34slx0b"
 
 set -euo pipefail
 
@@ -10,7 +12,7 @@ set -euo pipefail
 rm -f .nix-tools.cache
 
 echo "+++ Cabal configure"
-cabal new-update hackage.haskell.org,2019-03-15T00:00:00Z
+cabal new-update "hackage.haskell.org,$index_state"
 cabal new-configure
 
 echo
@@ -40,3 +42,13 @@ echo
 echo "+++ Build project"
 
 nix build -f nix2 nix-tools.components.exes --no-link
+
+echo
+echo "--- Test index file truncation"
+
+nix-store --delete /nix/store/*-00-index.tar.gz || true
+nix build -f test/truncate-index.nix --no-link \
+    --arg nix-tools-path ./nix2  \
+    --argstr index-state "$index_state" \
+    --argstr hash "$expected_hash" \
+    -A indexTruncated
