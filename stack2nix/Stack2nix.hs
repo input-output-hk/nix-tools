@@ -104,6 +104,7 @@ extraDeps2nix (Stack _ _ pkgs _) =
         toText :: Text a => a -> T.Text
         toText = fromString . show . disp
 
+-- | Converts 'PackageFlags' into @{ packageName = { flagA = BOOL; flagB = BOOL; }; }@
 flags2nix :: Stack -> NExpr
 flags2nix (Stack _ _ _ pkgFlags) =
   mkNonRecSet [ quoted pkgName $= mkNonRecSet [ quoted flag $= mkBool val
