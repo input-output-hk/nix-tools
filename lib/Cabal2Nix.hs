@@ -205,11 +205,13 @@ instance ToNixExpr' PackageDescription where
     if detailLevel == MinimalDetails
       then []
       else
-        [ "dataDir"     $= mkStr (fromString (dataDir pd))
-        , "dataFiles"   $= toNix (dataFiles pd)
-        , "extraSrcFiles"  $= toNix (extraSrcFiles pd)
-        , "extraTmpFiles"  $= toNix (extraTmpFiles pd)
-        , "extraDocFiles"  $= toNix (extraDocFiles pd)
+        [ "detailLevel"   $= mkStr (fromString (show detailLevel))
+        , "licenseFiles"  $= toNix (licenseFiles pd)
+        , "dataDir"       $= mkStr (fromString (dataDir pd))
+        , "dataFiles"     $= toNix (dataFiles pd)
+        , "extraSrcFiles" $= toNix (extraSrcFiles pd)
+        , "extraTmpFiles" $= toNix (extraTmpFiles pd)
+        , "extraDocFiles" $= toNix (extraDocFiles pd)
         ]
 
 newtype SysDependency = SysDependency { unSysDependency :: String } deriving (Show, Eq, Ord)
@@ -238,11 +240,14 @@ instance ToNixExpr' GenericPackageDescription where
                     then []
                     else
                       [ "modules"      $= toNix mods | Just mods <- [shakeTree . fmap (fmap ModuleName.toFilePath . modules) $ comp ] ] ++
+                      [ "asmSources"   $= toNix src  | Just src  <- [shakeTree . fmap (asmSources   . getBuildInfo) $ comp ] ] ++
+                      [ "cmmSources"   $= toNix src  | Just src  <- [shakeTree . fmap (cmmSources   . getBuildInfo) $ comp ] ] ++
                       [ "cSources"     $= toNix src  | Just src  <- [shakeTree . fmap (cSources     . getBuildInfo) $ comp ] ] ++
                       [ "cxxSources"   $= toNix src  | Just src  <- [shakeTree . fmap (cxxSources   . getBuildInfo) $ comp ] ] ++
                       [ "jsSources"    $= toNix src  | Just src  <- [shakeTree . fmap (jsSources    . getBuildInfo) $ comp ] ] ++
                       [ "hsSourceDirs" $= toNix dir  | Just dir  <- [shakeTree . fmap (hsSourceDirs . getBuildInfo) $ comp ] ] ++
                       [ "includeDirs"  $= toNix dir  | Just dir  <- [shakeTree . fmap (includeDirs  . getBuildInfo) $ comp] ] ++
+                      [ "includes"     $= toNix dir  | Just dir  <- [shakeTree . fmap (includes     . getBuildInfo) $ comp] ] ++
                       [ "mainPath"     $= toNix p | Just p <- [shakeTree . fmap (maybeToList . getMainPath) $ comp] ])
               where name = fromString $ unUnqualComponentName unQualName
                     toolDeps = getToolDependencies (packageDescription gpd)
