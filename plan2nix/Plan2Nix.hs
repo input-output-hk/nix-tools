@@ -153,7 +153,7 @@ plan2nix args (Plan { packages, extras, compilerVersion, compilerPackages }) = d
                 src = Just $ C2N.Git url rev (Just sha256) subdir'
             createDirectoryIfMissing True (takeDirectory nixFile)
             writeDoc nixFile =<<
-              prettyNix <$> cabal2nix FullDetails src cabalFile
+              prettyNix <$> cabal2nix (argDetailLevel args) src cabalFile
             liftIO $ appendCache (argCacheFile args) url rev subdir sha256 pkg nix
             return $ fromString pkg $= mkPath False nix
 
