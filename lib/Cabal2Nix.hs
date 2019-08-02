@@ -40,7 +40,7 @@ import Nix.Expr
 import Data.Fix(Fix(..))
 import Data.Text (Text)
 
-import Cabal2Nix.Util (quoted, selectOrThrow, mkThrow)
+import Cabal2Nix.Util (quoted, selectOr, mkThrow)
 
 data Src
   = Path FilePath
@@ -52,6 +52,14 @@ pkgs   = "pkgs"
 hsPkgs = "hsPkgs"
 pkgconfPkgs = "pkgconfPkgs"
 flags  = "flags"
+
+buildDepError, sysDepError, pkgConfDepError, exeDepError, legacyExeDepError, buildToolDepError :: Text
+buildDepError = "buildDepError"
+sysDepError = "sysDepError"
+pkgConfDepError = "pkgConfDepError" 
+exeDepError = "exeDepError"
+legacyExeDepError = "legacyExeDepError"
+buildToolDepError = "buildToolDepError" 
 
 ($//?) :: NExpr -> Maybe NExpr -> NExpr
 lhs $//? (Just e) = lhs $// e
@@ -89,7 +97,7 @@ cabal2nix fileDetails src = \case
         (_, Right desc) -> pure desc
 
 gpd2nix :: CabalDetailLevel -> Maybe Src -> Maybe NExpr -> GenericPackageDescription -> NExpr
-gpd2nix fileDetails src extra gpd = mkFunction args $ toNix' fileDetails gpd $//? (toNix <$> src) $//? extra
+gpd2nix fileDetails src extra gpd = mkLets errorFunctions $ mkFunction args $ toNix' fileDetails gpd $//? (toNix <$> src) $//? extra
   where args :: Params NExpr
         args = mkParamset [ ("system", Nothing)
                           , ("compiler", Nothing)
@@ -98,6 +106,16 @@ gpd2nix fileDetails src extra gpd = mkFunction args $ toNix' fileDetails gpd $//
                           , (hsPkgs, Nothing)
                           , (pkgconfPkgs, Nothing)]
                           True
+
+errorFunctions :: [Binding NExpr]
+errorFunctions = 
+  [ buildDepError $= mkFunction "pkg" (mkThrow $ mkStr "The Haskell package set does not contain the package: " $+ "pkg" $+ mkStr " (build dependency)")
+  , sysDepError $= mkFunction "pkg" (mkThrow $ mkStr "The Nixpkgs package set does not contain the package: " $+ "pkg" $+ mkStr " (system dependency)")
+  , pkgConfDepError $= mkFunction "pkg" (mkThrow $ mkStr "The pkg-conf packages does not contain the package: " $+ "pkg" $+ mkStr " (pkg-conf dependency)")
+  , exeDepError $= mkFunction "pkg" (mkThrow $ mkStr "The local executable components do not include the component: " $+ "pkg" $+ mkStr " (executable dependency)")
+  , legacyExeDepError $= mkFunction "pkg" (mkThrow $ mkStr "The Haskell package set does not contain the package: " $+ "pkg" $+ mkStr " (executable dependency)")
+  , buildToolDepError $= mkFunction "pkg" (mkThrow $ mkStr "Neither the Haskell package set or the Nixpkgs package set contain the package: " $+ "pkg" $+ mkStr " (build tool dependency)")
+  ]
 
 class IsComponent a where
   getBuildInfo :: a -> BuildInfo
@@ -263,53 +281,43 @@ instance ToNixExpr' GenericPackageDescription where
             (bindTo "tests"       . mkNonRecSet <$> filter (not . null) [ uncurry component <$> condTestSuites   gpd ]) ++
             (bindTo "benchmarks"  . mkNonRecSet <$> filter (not . null) [ uncurry component <$> condBenchmarks   gpd ])
 
+-- WARNING: these use functions bound at he top level in the GPD expression, they won't work outside it
+
 instance ToNixExpr Dependency where
-  toNix d = selectOrThrow (mkSym hsPkgs) (mkSelector $ quoted pkg) msg
+  toNix d = selectOr (mkSym hsPkgs) (mkSelector $ quoted pkg) (mkSym buildDepError @@ mkStr pkg)
     where
       pkg = fromString . show . pretty . depPkgName $ d
-      msg :: Text
-      msg = "The Haskell package set does not contain the package: " <> pkg <> " (build dependency)"
 
 instance ToNixExpr SysDependency where
-  toNix d = selectOrThrow (mkSym pkgs) (mkSelector $ quoted pkg) msg
+  toNix d = selectOr (mkSym pkgs) (mkSelector $ quoted pkg) (mkSym sysDepError @@ mkStr pkg)
     where
       pkg = fromString . unSysDependency $ d
-      msg :: Text
-      msg = "The Nixpkgs package set does not contain the package: " <> pkg <> " (system dependency)"
 
 instance ToNixExpr PkgconfigDependency where
-  toNix (PkgconfigDependency name _versionRange) = selectOrThrow (mkSym pkgconfPkgs) (mkSelector $ quoted pkg) msg
+  toNix (PkgconfigDependency name _versionRange) = selectOr (mkSym pkgconfPkgs) (mkSelector $ quoted pkg) (mkSym pkgConfDepError @@ mkStr pkg)
     where
       pkg = fromString . unPkgconfigName $ name
-      msg :: Text
-      msg = "The pkg-conf packages does not contain the package: " <> pkg <> " (pkg-conf dependency)"
 
 instance ToNixExpr ExeDependency where
-  toNix (ExeDependency pkgName' _unqualCompName _versionRange) = selectOrThrow (mkSym "exes") (mkSelector $ pkg) msg
+  toNix (ExeDependency pkgName' _unqualCompName _versionRange) = selectOr (mkSym "exes") (mkSelector $ pkg) (mkSym exeDepError @@ mkStr pkg)
     where
       pkg = fromString . show . pretty $ pkgName'
-      msg :: Text
-      msg = "The local executable components do not include the component: " <> pkg <> " (executable dependency)"
 
 instance ToNixExpr BuildToolDependency where
   toNix (BuildToolDependency pkgName') =
       -- TODO once https://github.com/haskell-nix/hnix/issues/52
       -- is reolved use something like:
       -- [nix| hsPkgs.buildPackages.$((pkgName)) or pkgs.buildPackages.$((pkgName)) ]
-      Fix $ NSelect (mkSym hsPkgs) buildPackagesDotName
-        (Just . Fix $ NSelect (mkSym pkgs) buildPackagesDotName (Just $ mkThrow msg))
+      selectOr (mkSym hsPkgs) buildPackagesDotName
+        (selectOr (mkSym pkgs) buildPackagesDotName (mkSym buildToolDepError @@ mkStr pkg))
     where
       pkg = fromString . show . pretty $ pkgName'
       buildPackagesDotName = mkSelector "buildPackages" <> mkSelector pkg
-      msg :: Text
-      msg = "Neither the Haskell package set or the Nixpkgs package set contain the package: " <> pkg <> " (build tool dependency)"
 
 instance ToNixExpr LegacyExeDependency where
-  toNix (LegacyExeDependency name _versionRange) = selectOrThrow (mkSym hsPkgs) (mkSelector $ quoted pkg) msg
+  toNix (LegacyExeDependency name _versionRange) = selectOr (mkSym hsPkgs) (mkSelector $ quoted pkg) (mkSym legacyExeDepError @@ mkStr pkg)
     where
       pkg = fromString name
-      msg :: Text
-      msg = "The Haskell package set does not contain the package: " <> pkg <> " (executable dependency)"
 
 instance {-# OVERLAPPABLE #-} ToNixExpr String where
   toNix = mkStr . fromString

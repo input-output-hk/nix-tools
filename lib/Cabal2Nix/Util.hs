@@ -24,11 +24,11 @@ listDirectories p =
 quoted :: (IsString a, Semigroup a) => a -> a
 quoted str = "\"" <> str <> "\""
 
-selectOrThrow :: NExpr -> NAttrPath NExpr -> Text -> NExpr
-selectOrThrow obj path msg = Fix (NSelect obj path (Just $ mkThrow msg))
+selectOr :: NExpr -> NAttrPath NExpr -> NExpr -> NExpr
+selectOr obj path alt = Fix (NSelect obj path (Just $ alt))
 
-mkThrow :: Text -> NExpr
-mkThrow msg = (mkSym "builtins" @. "throw") @@ mkStr msg
+mkThrow :: NExpr -> NExpr
+mkThrow msg = (mkSym "builtins" @. "throw") @@ msg
 
 sha256 :: String -> String
 sha256 = unpack . Base16.encode . hash . pack
