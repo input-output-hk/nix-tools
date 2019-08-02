@@ -109,13 +109,55 @@ gpd2nix fileDetails src extra gpd = mkLets errorFunctions $ mkFunction args $ to
 
 errorFunctions :: [Binding NExpr]
 errorFunctions = 
-  [ buildDepError $= mkFunction "pkg" (mkThrow $ mkStr "The Haskell package set does not contain the package: " $+ "pkg" $+ mkStr " (build dependency)")
-  , sysDepError $= mkFunction "pkg" (mkThrow $ mkStr "The Nixpkgs package set does not contain the package: " $+ "pkg" $+ mkStr " (system dependency)")
-  , pkgConfDepError $= mkFunction "pkg" (mkThrow $ mkStr "The pkg-conf packages does not contain the package: " $+ "pkg" $+ mkStr " (pkg-conf dependency)")
-  , exeDepError $= mkFunction "pkg" (mkThrow $ mkStr "The local executable components do not include the component: " $+ "pkg" $+ mkStr " (executable dependency)")
-  , legacyExeDepError $= mkFunction "pkg" (mkThrow $ mkStr "The Haskell package set does not contain the package: " $+ "pkg" $+ mkStr " (executable dependency)")
-  , buildToolDepError $= mkFunction "pkg" (mkThrow $ mkStr "Neither the Haskell package set or the Nixpkgs package set contain the package: " $+ "pkg" $+ mkStr " (build tool dependency)")
+  [ buildDepError $= mkFunction "pkg" (mkThrow $ 
+      Fix $ NStr $ Indented 0 
+          [ Plain "The Haskell package set does not contain the package: " 
+          , Antiquoted "pkg"
+          , Plain " (build dependency).\n\n"
+          , Plain haskellUpdateSnippet
+          ])
+  , sysDepError $= mkFunction "pkg" (mkThrow $ 
+      Fix $ NStr $ Indented 0 
+          [ Plain "The Nixpkgs package set does not contain the package: " 
+          , Antiquoted "pkg"
+          , Plain " (system dependency).\n\n"
+          , Plain systemUpdateSnippet
+          ])
+  , pkgConfDepError $= mkFunction "pkg" (mkThrow $ 
+      Fix $ NStr $ Indented 0 
+          [ Plain "The pkg-conf packages does not contain the package: " 
+          , Antiquoted "pkg"
+          , Plain " (pkg-conf dependency).\n\n"
+          , Plain "You may need to augment the pkg-conf package mapping in haskell.nix so that it can be found."
+          ])
+  , exeDepError $= mkFunction "pkg" (mkThrow $ 
+      Fix $ NStr $ Indented 0 
+          [ Plain "The local executable components do not include the component: " 
+          , Antiquoted "pkg"
+          , Plain " (executable dependency)."
+          ])
+  , legacyExeDepError $= mkFunction "pkg" (mkThrow $ 
+      Fix $ NStr $ Indented 0 
+          [ Plain "The Haskell package set does not contain the package: " 
+          , Antiquoted "pkg"
+          , Plain " (executable dependency).\n\n"
+          , Plain haskellUpdateSnippet
+          ])
+  , buildToolDepError $= mkFunction "pkg" (mkThrow $ 
+      Fix $ NStr $ Indented 0 
+          [ Plain "Neither the Haskell package set or the Nixpkgs package set contain the package: " 
+          , Antiquoted "pkg"
+          , Plain " (build tool dependency).\n\n"
+          , Plain "If this is a system dependency:\n"
+          , Plain systemUpdateSnippet
+          , Plain "\n\n"
+          , Plain "If this is a Haskell dependency:\n"
+          , Plain haskellUpdateSnippet
+          ])
   ]
+  where
+    systemUpdateSnippet = "You may need to augment the system package mapping in haskell.nix so that it can be found."
+    haskellUpdateSnippet = "If you are using Stackage, make sure that you are using a snapshot that contains the package. Otherwise you may need to update the Hackage snapshot you are using, usually by updating haskell.nix."
 
 class IsComponent a where
   getBuildInfo :: a -> BuildInfo
