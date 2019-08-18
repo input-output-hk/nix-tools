@@ -8,6 +8,10 @@ builtins.mapAttrs (k: _v:
     nix-tools = pkgs.runCommand "nix-tools-via-cabal-install" {
       buildInputs = with pkgs; [ ghc cabal-install zlib.dev ];
     } ''
+        export HOME=$TMP
+        mkdir $HOME/.cabal
+        touch $HOME/.cabal/config
+        cabal new-update
         cabal new-build
     '';
   }
