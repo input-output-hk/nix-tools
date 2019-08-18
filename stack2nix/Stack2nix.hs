@@ -72,12 +72,13 @@ stack2nix args stack@(Stack resolver compiler _ _) =
      packages <- packages2nix args stack
      return . mkNonRecSet $
        [ "extras" $= ("hackage" ==> mkNonRecSet
-                     ([ "packages" $= mkNonRecSet (extraDeps <> packages <> flags) ]
+                     ([ "packages" $= mkNonRecSet (extraDeps <> packages) ]
                    ++ [ "compiler.version" $= fromString (quoted ver)
                       | (Just c) <- [compiler], let ver = filter (`elem` (".0123456789" :: [Char])) c]
                    ++ [ "compiler.nix-name" $= fromString (quoted name)
                       | (Just c) <- [compiler], let name = filter (`elem` ((['a'..'z']++['0'..'9']) :: [Char])) c]))
        , "resolver"  $= fromString (quoted resolver)
+       , "modules" $= mkList [ mkNonRecSet [ "packages" $= mkNonRecSet flags ] ]
        ] ++ [
          "compiler" $= fromString (quoted c) | (Just c) <- [compiler]
        ]
