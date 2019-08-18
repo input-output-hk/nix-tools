@@ -10,7 +10,6 @@ builtins.mapAttrs (k: _v:
     } ''
         export HOME=$TMP
         mkdir $HOME/.cabal
-        touch $HOME/.cabal/config
         cabal new-update
         cabal new-build
     '';
