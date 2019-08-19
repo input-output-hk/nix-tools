@@ -14,7 +14,6 @@ builtins.mapAttrs (k: _v:
   }
 ) {
   x86_64-linux = {};
-
   # Uncomment to test build on macOS too
   # x86_64-darwin = {};
 }
