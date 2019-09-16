@@ -1,9 +1,9 @@
 #! /usr/bin/env nix-shell
-#! nix-shell -I "nixpkgs=channel:nixos-19.03" --pure -i bash -p nix cabal-install ghc
+#! nix-shell -I "nixpkgs=channel:nixos-19.03" --pure -i bash -p nix cabal-install ghc git
 
 export NIX_PATH="nixpkgs=channel:nixos-19.03"
-index_state="2019-03-15T00:00:00Z"
-expected_hash="1cv2k7j8a6a5wg1jpp8xck8czi7zr1mqkavfc1zab4jxh69aghy9"
+index_state="2019-09-15T00:00:00Z"
+expected_hash="1qgk0dnsq2j7sa5ww9vv8ikj0cxc4b1y87z22a1mvizjd8h5nlw8"
 
 set -euo pipefail
 
