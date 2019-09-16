@@ -1,6 +1,6 @@
 builtins.mapAttrs (k: _v:
   let
-    haskell-nix = builtins.fetchTarball "https://github.com/input-output-hk/haskell.nix/archive/71716e4b216c421a8827d2642b97572afb9efd36.tar.gz";
+    haskell-nix = builtins.fetchTarball "https://github.com/input-output-hk/haskell.nix/archive/83e4d87e6e31662f0a731cb6cf0d0fb9126c7687.tar.gz";
     url = "https://github.com/NixOS/nixpkgs/archive/2255f292063ccbe184ff8f9b35ce475c04d5ae69.tar.gz";
     pkgs = import (builtins.fetchTarball url) {
       system = k;
