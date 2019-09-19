@@ -17,4 +17,6 @@ builtins.mapAttrs (k: _v:
 
   # Uncomment to test build on macOS too
   # x86_64-darwin = {};
+
+  # Just adding this to trigger a build
 }
