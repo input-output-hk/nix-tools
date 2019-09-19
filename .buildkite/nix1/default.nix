@@ -1,22 +1,12 @@
-{ pkgs ? import <nixpkgs> {} }:
+{ nixpkgs ? builtins.fetchTarball https://github.com/NixOS/nixpkgs/archive/2255f292063ccbe184ff8f9b35ce475c04d5ae69.tar.gz }:
 
 let
-  haskell = import (builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/master.tar.gz) { inherit pkgs; };
+  pkgs = import (builtins.fetchTarball https://github.com/input-output-hk/haskell.nix/archive/hkm/overlays-2.tar.gz) { inherit nixpkgs; };
 
-  cabalPatch = pkgs.fetchpatch {
-    url = "https://patch-diff.githubusercontent.com/raw/haskell/cabal/pull/6055.diff";
-    sha256 = "145g7s3z9q8d18pxgyngvixgsm6gmwh1rgkzkhacy4krqiq0qyvx";
-    stripLen = 1;
-  };
-
-  pkgSet = haskell.mkCabalProjectPkgSet {
+  pkgSet = pkgs.haskell-nix.mkCabalProjectPkgSet {
     plan-pkgs = import ./pkgs.nix;
     pkg-def-extras = [];
-    modules = [{
-      packages.Cabal.patches = [ cabalPatch ];
-      packages.happy.package.buildType = pkgs.lib.mkOverride 10 "Custom";
-      packages.happy.package.setup-depends = pkgs.lib.mkOverride 10 [ pkgSet.config.hsPkgs.Cabal ];
-    }];
+    modules = [];
   };
 
 in
