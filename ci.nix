@@ -7,17 +7,13 @@ builtins.mapAttrs (k: _v:
       overlays = import "${haskell-nix}/overlays";
       config = import "${haskell-nix}/config.nix";
     };
+    inherit (pkgs.haskell-nix.cabalProject { src = ./.; }) nix-tools;
   in
   pkgs.recurseIntoAttrs {
     # These two attributes will appear in your job for each platform.
-    nix-tools-exes = pkgs.recurseIntoAttrs (
-      (pkgs.haskell-nix.cabalProject { src = ./.; }).nix-tools.components.exes);
+    nix-tools-exes = pkgs.recurseIntoAttrs nix-tools.components.exes;
   }
 ) {
   x86_64-linux = {};
-
-  # Uncomment to test build on macOS too
-  # x86_64-darwin = {};
-
-  # Just adding this to trigger a build
+  x86_64-darwin = {};
 }
