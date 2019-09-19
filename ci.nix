@@ -10,7 +10,7 @@ builtins.mapAttrs (k: _v:
   in
   pkgs.recurseIntoAttrs {
     # These two attributes will appear in your job for each platform.
-    nix-tools = pkgs.haskell-nix.cabalProject { src = ./.; };
+    nix-tools = pkgs.recurseIntoAttrs (pkgs.haskell-nix.cabalProject { src = ./.; });
   }
 ) {
   x86_64-linux = {};
