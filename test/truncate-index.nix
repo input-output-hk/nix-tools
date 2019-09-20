@@ -5,6 +5,7 @@
 }:
 
 rec {
+  pkgs = import nixpkgs {};
   hsPkgs = import nix-tools-path { inherit nixpkgs; };
   index = builtins.fetchurl http://hackage.haskell.org/01-index.tar.gz;
   indexTruncated = pkgs.runCommand "00-index.tar.gz" {
