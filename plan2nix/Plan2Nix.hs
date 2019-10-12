@@ -167,6 +167,8 @@ plan2nix args (Plan { packages, extras, compilerVersion, compilerPackages }) = d
 flags2nix :: Text -> HashMap Text Bool -> [Binding NExpr]
 flags2nix pkgName pkgFlags =
   [ quoted pkgName $= mkNonRecSet
+    -- `mkOverride 900` is used here so that the default values will be replaced (they are 1000).
+    -- Values without a priority are treated as 100 and will replace these ones.
     [ "flags" $= mkNonRecSet [ quoted flag $= ("lib" @. "mkOverride" @@ mkInt 900 @@ mkBool val)
                              | (flag, val) <- Map.toList pkgFlags
                              ]
