@@ -80,7 +80,7 @@ stack2nix args stack@(Stack resolver compiler pkgs pkgFlags ghcOpts) =
                       | (Just c) <- [compiler], let name = filter (`elem` ((['a'..'z']++['0'..'9']) :: [Char])) c]))
        , "resolver"  $= fromString (quoted resolver)
        , "modules" $= mkList [
-           mkNonRecSet [ "packages" $= mkNonRecSet flags ]
+           mkNonRecSet [ mkParamset [("lib", Nothing)] True ==> "packages" $= mkNonRecSet flags ]
          , mkNonRecSet [ "packages" $= mkNonRecSet ghcOptions ] ]
        ] ++ [
          "compiler" $= fromString (quoted c) | (Just c) <- [compiler]
@@ -112,7 +112,7 @@ extraDeps2nix pkgs =
 flags2nix :: PackageFlags -> [Binding NExpr]
 flags2nix pkgFlags =
   [ quoted pkgName $= mkNonRecSet
-    [ "flags" $= mkNonRecSet [ quoted flag $= mkBool val
+    [ "flags" $= mkNonRecSet [ quoted flag $= ("lib" @. "mkOverride" @@ mkInt 900 @@ mkBool val)
                              | (flag, val) <- HM.toList flags
                              ]
     ]
