@@ -3,7 +3,7 @@
 
 export NIX_PATH="nixpkgs=channel:nixos-19.09"
 index_state="2020-01-10T00:00:00Z"
-expected_hash="1qgk0dnsq2j7sa5ww9vv8ikj0cxc4b1y87z22a1mvizjd8h5nlw8"
+expected_hash="0z2jc4fibfxz88pfgjq3wk5j3v7sn34xkwb8h60hbwfwhhy63vx6"
 
 set -euo pipefail
 
