@@ -38,7 +38,8 @@ main = getArgs >>= \case
 ltsPackages :: FilePath -> IO NExpr
 ltsPackages lts = do
   -- use yaml here, so we don't have to deal with yaml AND json.
-  cpYaml <- fromMaybe "./compiler-packages.yaml" <$> lookupEnv "COMPILER_PACKAGES"
+  -- pull it from https://raw.githubusercontent.com/commercialhaskell/stackage-content/master/stack/global-hints.yaml
+  cpYaml <- fromMaybe "./global-hints.yaml" <$> lookupEnv "GLOBAL_HINTS"
   compilerPackages <- decodeFileEither cpYaml >>= \case
     Left e      -> error $ "Parsing " ++ show cpYaml ++ ": " ++ show e
     Right value -> pure value
