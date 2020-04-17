@@ -6,8 +6,9 @@ module Cabal2Nix (cabal2nix, gpd2nix, Src(..), CabalFile(..), CabalFileGenerator
 
 import Distribution.PackageDescription.Parsec (readGenericPackageDescription, parseGenericPackageDescription, runParseResult)
 import Distribution.Verbosity (normal)
-import Distribution.Text (disp)
+import Distribution.Text (display)
 import Distribution.Pretty (pretty)
+import Distribution.Utils.ShortText (fromShortText)
 import Data.Char (toUpper)
 import System.FilePath
 import Data.ByteString (ByteString)
@@ -236,24 +237,24 @@ applyMkDefault :: NExpr -> NExpr
 applyMkDefault expr = mkSym pkgs @. "lib" @. "mkDefault" @@ expr
 
 instance ToNixExpr PackageIdentifier where
-  toNix ident = mkNonRecSet [ "name"    $= mkStr (fromString (show (disp (pkgName ident))))
-                            , "version" $= mkStr (fromString (show (disp (pkgVersion ident))))]
+  toNix ident = mkNonRecSet [ "name"    $= mkStr (fromString (show (display (pkgName ident))))
+                            , "version" $= mkStr (fromString (show (display (pkgVersion ident))))]
 
 toNixPackageDescription :: Bool -> CabalDetailLevel -> PackageDescription -> NExpr
 toNixPackageDescription isLocal detailLevel pd = mkNonRecSet $
-    [ "specVersion" $= mkStr (fromString (show (disp (specVersion pd))))
+    [ "specVersion" $= mkStr (fromString (show (display (specVersion pd))))
     , "identifier"  $= toNix (package pd)
     , "license"     $= mkStr (fromString (show (pretty (license pd))))
 
-    , "copyright"   $= mkStr (fromString (copyright pd))
-    , "maintainer"  $= mkStr (fromString (maintainer pd))
-    , "author"      $= mkStr (fromString (author pd))
+    , "copyright"   $= mkStr (fromString (fromShortText (copyright pd)))
+    , "maintainer"  $= mkStr (fromString (fromShortText (maintainer pd)))
+    , "author"      $= mkStr (fromString (fromShortText (author pd)))
 
-    , "homepage"    $= mkStr (fromString (homepage pd))
-    , "url"         $= mkStr (fromString (pkgUrl pd))
+    , "homepage"    $= mkStr (fromString (fromShortText (homepage pd)))
+    , "url"         $= mkStr (fromString (fromShortText (pkgUrl pd)))
 
-    , "synopsis"    $= mkStr (fromString (synopsis pd))
-    , "description" $= mkStr (fromString (description pd))
+    , "synopsis"    $= mkStr (fromString (fromShortText (synopsis pd)))
+    , "description" $= mkStr (fromString (fromShortText (description pd)))
 
     , "buildType"   $= mkStr (fromString (show (pretty (buildType pd))))
     ] ++
@@ -284,7 +285,7 @@ toNixGenericPackageDescription isLocal detailLevel gpd = mkNonRecSet
                           , "package"       $= toNixPackageDescription isLocal detailLevel (packageDescription gpd)
                           , "components"    $= components ]
     where _packageName :: IsString a => a
-          _packageName = fromString . show . disp . pkgName . package . packageDescription $ gpd
+          _packageName = fromString . show . display . pkgName . package . packageDescription $ gpd
           component :: IsComponent comp => UnqualComponentName -> CondTree ConfVar [Dependency] comp -> Binding NExpr
           component unQualName comp
             = quoted name $=
@@ -378,11 +379,11 @@ instance ToNixExpr CompilerFlavor where
 
 instance ToNixExpr (VersionRangeF VersionRange) where
   toNix AnyVersionF              = mkBool True
-  toNix (ThisVersionF       ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (disp ver)))
-  toNix (LaterVersionF      ver) = mkSym "compiler" @. "version" @. "gt" @@ mkStr (fromString (show (disp ver)))
-  toNix (OrLaterVersionF    ver) = mkSym "compiler" @. "version" @. "ge" @@ mkStr (fromString (show (disp ver)))
-  toNix (EarlierVersionF    ver) = mkSym "compiler" @. "version" @. "lt" @@ mkStr (fromString (show (disp ver)))
-  toNix (OrEarlierVersionF  ver) = mkSym "compiler" @. "version" @. "le" @@ mkStr (fromString (show (disp ver)))
+  toNix (ThisVersionF       ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (display ver)))
+  toNix (LaterVersionF      ver) = mkSym "compiler" @. "version" @. "gt" @@ mkStr (fromString (show (display ver)))
+  toNix (OrLaterVersionF    ver) = mkSym "compiler" @. "version" @. "ge" @@ mkStr (fromString (show (display ver)))
+  toNix (EarlierVersionF    ver) = mkSym "compiler" @. "version" @. "lt" @@ mkStr (fromString (show (display ver)))
+  toNix (OrEarlierVersionF  ver) = mkSym "compiler" @. "version" @. "le" @@ mkStr (fromString (show (display ver)))
   toNix (WildcardVersionF  _ver) = mkBool False
 --  toNix (MajorBoundVersionF ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (disp ver)))
   toNix (IntersectVersionRangesF v1 v2) = toNix (projectVersionRange v1) $&& toNix (projectVersionRange v2)
