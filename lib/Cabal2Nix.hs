@@ -6,7 +6,6 @@ module Cabal2Nix (cabal2nix, gpd2nix, Src(..), CabalFile(..), CabalFileGenerator
 
 import Distribution.PackageDescription.Parsec (readGenericPackageDescription, parseGenericPackageDescription, runParseResult)
 import Distribution.Verbosity (normal)
-import Distribution.Text (display)
 import Distribution.Pretty (pretty)
 import Distribution.Utils.ShortText (fromShortText)
 import Data.Char (toUpper)
@@ -237,12 +236,12 @@ applyMkDefault :: NExpr -> NExpr
 applyMkDefault expr = mkSym pkgs @. "lib" @. "mkDefault" @@ expr
 
 instance ToNixExpr PackageIdentifier where
-  toNix ident = mkNonRecSet [ "name"    $= mkStr (fromString (show (display (pkgName ident))))
-                            , "version" $= mkStr (fromString (show (display (pkgVersion ident))))]
+  toNix ident = mkNonRecSet [ "name"    $= mkStr (fromString (show (pretty (pkgName ident))))
+                            , "version" $= mkStr (fromString (show (pretty (pkgVersion ident))))]
 
 toNixPackageDescription :: Bool -> CabalDetailLevel -> PackageDescription -> NExpr
 toNixPackageDescription isLocal detailLevel pd = mkNonRecSet $
-    [ "specVersion" $= mkStr (fromString (show (display (specVersion pd))))
+    [ "specVersion" $= mkStr (fromString (show (pretty (specVersion pd))))
     , "identifier"  $= toNix (package pd)
     , "license"     $= mkStr (fromString (show (pretty (license pd))))
 
@@ -285,7 +284,7 @@ toNixGenericPackageDescription isLocal detailLevel gpd = mkNonRecSet
                           , "package"       $= toNixPackageDescription isLocal detailLevel (packageDescription gpd)
                           , "components"    $= components ]
     where _packageName :: IsString a => a
-          _packageName = fromString . show . display . pkgName . package . packageDescription $ gpd
+          _packageName = fromString . show . pretty . pkgName . package . packageDescription $ gpd
           component :: IsComponent comp => UnqualComponentName -> CondTree ConfVar [Dependency] comp -> Binding NExpr
           component unQualName comp
             = quoted name $=
@@ -379,13 +378,13 @@ instance ToNixExpr CompilerFlavor where
 
 instance ToNixExpr (VersionRangeF VersionRange) where
   toNix AnyVersionF              = mkBool True
-  toNix (ThisVersionF       ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (display ver)))
-  toNix (LaterVersionF      ver) = mkSym "compiler" @. "version" @. "gt" @@ mkStr (fromString (show (display ver)))
-  toNix (OrLaterVersionF    ver) = mkSym "compiler" @. "version" @. "ge" @@ mkStr (fromString (show (display ver)))
-  toNix (EarlierVersionF    ver) = mkSym "compiler" @. "version" @. "lt" @@ mkStr (fromString (show (display ver)))
-  toNix (OrEarlierVersionF  ver) = mkSym "compiler" @. "version" @. "le" @@ mkStr (fromString (show (display ver)))
+  toNix (ThisVersionF       ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (pretty ver)))
+  toNix (LaterVersionF      ver) = mkSym "compiler" @. "version" @. "gt" @@ mkStr (fromString (show (pretty ver)))
+  toNix (OrLaterVersionF    ver) = mkSym "compiler" @. "version" @. "ge" @@ mkStr (fromString (show (pretty ver)))
+  toNix (EarlierVersionF    ver) = mkSym "compiler" @. "version" @. "lt" @@ mkStr (fromString (show (pretty ver)))
+  toNix (OrEarlierVersionF  ver) = mkSym "compiler" @. "version" @. "le" @@ mkStr (fromString (show (pretty ver)))
   toNix (WildcardVersionF  _ver) = mkBool False
---  toNix (MajorBoundVersionF ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (disp ver)))
+--  toNix (MajorBoundVersionF ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (pretty ver)))
   toNix (IntersectVersionRangesF v1 v2) = toNix (projectVersionRange v1) $&& toNix (projectVersionRange v2)
   toNix x = error $ "ToNixExpr VersionRange for `" ++ show x ++ "` not implemented!"
 
