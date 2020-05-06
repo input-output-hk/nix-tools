@@ -41,6 +41,9 @@ library
                      , directory
                      , extra
                      , filepath
+-- Needs https://github.com/input-output-hk/iohk-nix/commit/6a8c29117eff36ce975e02e01efc8b25d93fcb90#diff-6fb0c6517b547a8baf082d5d2d604842
+-- to work with the data-dir issues when building components.
+-- This commit is included since 0.6.5.
                      , hnix >= 0.6.5
                      , hpack
                      , http-client
