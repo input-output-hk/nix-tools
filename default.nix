@@ -1,6 +1,6 @@
 { haskellNixSrc ? builtins.fetchTarball {
-      url = "https://github.com/input-output-hk/haskell.nix/archive/fc31134a3de7a82a9c14a70426a7fda68a26f41a.tar.gz";
-      sha256 = "17nhnxj7lg92yb8ngylmqd2ly2vkgi0mg6h5pnhgn4w4mxs17rly";
+      url = "https://github.com/input-output-hk/haskell.nix/archive/f78841c2d05c6c686d3888131104360944464dc2.tar.gz";
+      sha256 = "1zwhskx9drd0266kcrxf5vzcgs9vfiiibzkc2h3yarfb2xl7185q";
     }
 , nixpkgs ? (import haskellNixSrc {}).sources.nixpkgs-default
 , pkgs ? import nixpkgs (import haskellNixSrc {}).nixpkgsArgs
@@ -29,23 +29,7 @@ let
 in
   project // {
     shell = project.shellFor {
-      buildInputs = [ (pkgs.haskell-nix.hackage-package { name = "cabal-install"; version = "3.2.0.0";
-    modules = [{
-     nonReinstallablePkgs= [ "rts" "ghc-heap" "ghc-prim" "integer-gmp" "integer-simple" "base"
-      "deepseq" "array" "ghc-boot-th" "pretty" "template-haskell"
-      # ghcjs custom packages
-      "ghcjs-prim" "ghcjs-th"
-      "ghc-boot"
-      "ghc" "Win32" "array" "binary" "bytestring" "containers"
-      "directory" "filepath" "ghc-boot" "ghc-compact" "ghc-prim"
-      # "ghci" "haskeline"
-      "hpc"
-      "mtl" "parsec" "process" "text" "time" "transformers"
-      "unix" "xhtml"
-      # "stm" "terminfo"
-     ];
-    }];
-      }).components.exes.cabal ];
+      tools = { cabal = "3.2.0.0"; };
     };
   }
 
