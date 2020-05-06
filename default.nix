@@ -4,7 +4,7 @@
     }
 , nixpkgs ? (import haskellNixSrc {}).sources.nixpkgs-default
 , pkgs ? import nixpkgs (import haskellNixSrc {}).nixpkgsArgs
-, haskellCompiler ? "ghc865"
+, haskellCompiler ? "ghc883"
 }:
 let
   project = pkgs.haskell-nix.cabalProject {
