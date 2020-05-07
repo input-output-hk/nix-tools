@@ -60,7 +60,10 @@ nix build -f .buildkite/nix2 nix-tools.components.exes --no-link
 echo
 echo "--- Test index file truncation"
 
+shopt -s nullglob
 for a in /nix/store/*-00-index.tar.gz; do nix-store --delete $a; done
+shopt -u nullglob
+
 nix build -f test/truncate-index.nix --no-link \
     --arg nix-tools-path ./.buildkite/nix2  \
     --argstr index-state "$index_state" \
