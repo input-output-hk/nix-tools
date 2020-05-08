@@ -110,7 +110,7 @@ gpd2nix isLocal fileDetails src extra gpd =
                           , (pkgs, Nothing)
                           , (hsPkgs, Nothing)
                           , (pkgconfPkgs, Nothing)
-                          , (errorHandler, Nothing)]
+                          , (errorHandler, Nothing)
                           , ("config", Nothing)]
                           True
 
