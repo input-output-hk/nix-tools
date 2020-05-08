@@ -100,7 +100,7 @@ cabal2nix isLocal fileDetails src = \case
 
 gpd2nix :: Bool -> CabalDetailLevel -> Maybe Src -> Maybe NExpr -> GenericPackageDescription -> NExpr
 gpd2nix isLocal fileDetails src extra gpd =
-  mkLets errorFunctions $ mkFunction args $ toNixGenericPackageDescription isLocal fileDetails gpd
+  mkFunction args $ toNixGenericPackageDescription isLocal fileDetails gpd
     $//? (srcToNix (package $ packageDescription gpd) <$> src)
     $//? extra
   where args :: Params NExpr
