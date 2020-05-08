@@ -6,8 +6,8 @@ module Cabal2Nix (cabal2nix, gpd2nix, Src(..), CabalFile(..), CabalFileGenerator
 
 import Distribution.PackageDescription.Parsec (readGenericPackageDescription, parseGenericPackageDescription, runParseResult)
 import Distribution.Verbosity (normal)
-import Distribution.Text (disp)
 import Distribution.Pretty (pretty)
+import Distribution.Utils.ShortText (fromShortText)
 import Data.Char (toUpper)
 import System.FilePath
 import Data.ByteString (ByteString)
@@ -24,7 +24,7 @@ import Distribution.Types.PkgconfigDependency
 import Distribution.Types.PkgconfigName
 import Distribution.Types.VersionRange
 import Distribution.Compiler
-import Distribution.Types.PackageName (PackageName, mkPackageName)
+import Distribution.Types.PackageName (PackageName, mkPackageName, unPackageName)
 import Distribution.Simple.BuildToolDepends (desugarBuildTool)
 import Distribution.ModuleName (ModuleName)
 import qualified Distribution.ModuleName as ModuleName
@@ -44,6 +44,7 @@ import Cabal2Nix.Util (quoted, selectOr, mkThrow)
 
 data Src
   = Path FilePath
+  | PrivateHackage String
   | Git String String (Maybe String) (Maybe String)
   deriving Show
 
@@ -98,7 +99,10 @@ cabal2nix isLocal fileDetails src = \case
         (_, Right desc) -> pure desc
 
 gpd2nix :: Bool -> CabalDetailLevel -> Maybe Src -> Maybe NExpr -> GenericPackageDescription -> NExpr
-gpd2nix isLocal fileDetails src extra gpd = mkFunction args $ toNixGenericPackageDescription isLocal fileDetails gpd $//? (toNix <$> src) $//? extra
+gpd2nix isLocal fileDetails src extra gpd =
+  mkLets errorFunctions $ mkFunction args $ toNixGenericPackageDescription isLocal fileDetails gpd
+    $//? (srcToNix (package $ packageDescription gpd) <$> src)
+    $//? extra
   where args :: Params NExpr
         args = mkParamset [ ("system", Nothing)
                           , ("compiler", Nothing)
@@ -107,6 +111,7 @@ gpd2nix isLocal fileDetails src extra gpd = mkFunction args $ toNixGenericPackag
                           , (hsPkgs, Nothing)
                           , (pkgconfPkgs, Nothing)
                           , (errorHandler, Nothing)]
+                          , ("config", Nothing)]
                           True
 
 class IsComponent a where
@@ -166,44 +171,28 @@ class ToNixExpr a where
 class ToNixBinding a where
   toNixBinding :: a -> Binding NExpr
 
-instance ToNixExpr Src where
-  toNix (Path p) = mkRecSet [ "src" $= applyMkDefault (mkRelPath p) ]
-  toNix (Git url rev mbSha256 mbPath)
-    = mkNonRecSet $
-      [ "src" $= applyMkDefault (mkSym pkgs @. "fetchgit" @@ mkNonRecSet
-        [ "url"    $= mkStr (fromString url)
-        , "rev"    $= mkStr (fromString rev)
-        , "sha256" $= case mbSha256 of
-                        Just sha256 -> mkStr (fromString sha256)
-                        Nothing     -> mkNull
-        ])
-      ] <>
-      [ "postUnpack"
-        $= mkStr (fromString $ "sourceRoot+=/" <> root <> "; echo source root reset to $sourceRoot")
-      | Just root <- [mbPath] ]
-
 applyMkDefault :: NExpr -> NExpr
 applyMkDefault expr = mkSym pkgs @. "lib" @. "mkDefault" @@ expr
 
 instance ToNixExpr PackageIdentifier where
-  toNix ident = mkNonRecSet [ "name"    $= mkStr (fromString (show (disp (pkgName ident))))
-                            , "version" $= mkStr (fromString (show (disp (pkgVersion ident))))]
+  toNix ident = mkNonRecSet [ "name"    $= mkStr (fromString (show (pretty (pkgName ident))))
+                            , "version" $= mkStr (fromString (show (pretty (pkgVersion ident))))]
 
 toNixPackageDescription :: Bool -> CabalDetailLevel -> PackageDescription -> NExpr
 toNixPackageDescription isLocal detailLevel pd = mkNonRecSet $
-    [ "specVersion" $= mkStr (fromString (show (disp (specVersion pd))))
+    [ "specVersion" $= mkStr (fromString (show (pretty (specVersion pd))))
     , "identifier"  $= toNix (package pd)
     , "license"     $= mkStr (fromString (show (pretty (license pd))))
 
-    , "copyright"   $= mkStr (fromString (copyright pd))
-    , "maintainer"  $= mkStr (fromString (maintainer pd))
-    , "author"      $= mkStr (fromString (author pd))
+    , "copyright"   $= mkStr (fromString (fromShortText (copyright pd)))
+    , "maintainer"  $= mkStr (fromString (fromShortText (maintainer pd)))
+    , "author"      $= mkStr (fromString (fromShortText (author pd)))
 
-    , "homepage"    $= mkStr (fromString (homepage pd))
-    , "url"         $= mkStr (fromString (pkgUrl pd))
+    , "homepage"    $= mkStr (fromString (fromShortText (homepage pd)))
+    , "url"         $= mkStr (fromString (fromShortText (pkgUrl pd)))
 
-    , "synopsis"    $= mkStr (fromString (synopsis pd))
-    , "description" $= mkStr (fromString (description pd))
+    , "synopsis"    $= mkStr (fromString (fromShortText (synopsis pd)))
+    , "description" $= mkStr (fromString (fromShortText (description pd)))
 
     , "buildType"   $= mkStr (fromString (show (pretty (buildType pd))))
     ] ++
@@ -222,6 +211,35 @@ toNixPackageDescription isLocal detailLevel pd = mkNonRecSet $
         , "extraDocFiles" $= toNix (extraDocFiles pd)
         ]
 
+srcToNix :: PackageIdentifier -> Src -> NExpr
+srcToNix _ (Path p) = mkRecSet [ "src" $= applyMkDefault (mkRelPath p) ]
+srcToNix pi' (PrivateHackage url)
+  = mkNonRecSet $
+    [ "src" $= applyMkDefault (mkSym pkgs @. "fetchurl" @@ mkNonRecSet
+      [ "url" $= mkStr (fromString $ mkPrivateHackageUrl url pi')
+      , "sha256" $= (mkSym "config" @. "sha256")
+      ])
+    ]
+srcToNix _ (Git url rev mbSha256 mbPath)
+  = mkNonRecSet $
+    [ "src" $= applyMkDefault (mkSym pkgs @. "fetchgit" @@ mkNonRecSet
+      [ "url"    $= mkStr (fromString url)
+      , "rev"    $= mkStr (fromString rev)
+      , "sha256" $= case mbSha256 of
+                      Just sha256 -> mkStr (fromString sha256)
+                      Nothing     -> mkNull
+      ])
+    ] <>
+    [ "postUnpack"
+      $= mkStr (fromString $ "sourceRoot+=/" <> root <> "; echo source root reset to $sourceRoot")
+    | Just root <- [mbPath] ]
+
+mkPrivateHackageUrl :: String -> PackageIdentifier -> String
+mkPrivateHackageUrl hackageUrl pi' =
+  hackageUrl <> "/package/" <> pkgNameVersion <> "/" <> pkgNameVersion <> ".tar.gz"
+  where
+    pkgNameVersion = unPackageName (pkgName pi') <> "-" <> show (pretty (pkgVersion pi'))
+
 newtype SysDependency = SysDependency { unSysDependency :: String } deriving (Show, Eq, Ord)
 newtype BuildToolDependency = BuildToolDependency { unBuildToolDependency :: PackageName } deriving (Show, Eq, Ord)
 
@@ -234,7 +252,7 @@ toNixGenericPackageDescription isLocal detailLevel gpd = mkNonRecSet
                           , "package"       $= toNixPackageDescription isLocal detailLevel (packageDescription gpd)
                           , "components"    $= components ]
     where _packageName :: IsString a => a
-          _packageName = fromString . show . disp . pkgName . package . packageDescription $ gpd
+          _packageName = fromString . show . pretty . pkgName . package . packageDescription $ gpd
           component :: IsComponent comp => UnqualComponentName -> CondTree ConfVar [Dependency] comp -> Binding NExpr
           component unQualName comp
             = quoted name $=
@@ -328,13 +346,13 @@ instance ToNixExpr CompilerFlavor where
 
 instance ToNixExpr (VersionRangeF VersionRange) where
   toNix AnyVersionF              = mkBool True
-  toNix (ThisVersionF       ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (disp ver)))
-  toNix (LaterVersionF      ver) = mkSym "compiler" @. "version" @. "gt" @@ mkStr (fromString (show (disp ver)))
-  toNix (OrLaterVersionF    ver) = mkSym "compiler" @. "version" @. "ge" @@ mkStr (fromString (show (disp ver)))
-  toNix (EarlierVersionF    ver) = mkSym "compiler" @. "version" @. "lt" @@ mkStr (fromString (show (disp ver)))
-  toNix (OrEarlierVersionF  ver) = mkSym "compiler" @. "version" @. "le" @@ mkStr (fromString (show (disp ver)))
+  toNix (ThisVersionF       ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (pretty ver)))
+  toNix (LaterVersionF      ver) = mkSym "compiler" @. "version" @. "gt" @@ mkStr (fromString (show (pretty ver)))
+  toNix (OrLaterVersionF    ver) = mkSym "compiler" @. "version" @. "ge" @@ mkStr (fromString (show (pretty ver)))
+  toNix (EarlierVersionF    ver) = mkSym "compiler" @. "version" @. "lt" @@ mkStr (fromString (show (pretty ver)))
+  toNix (OrEarlierVersionF  ver) = mkSym "compiler" @. "version" @. "le" @@ mkStr (fromString (show (pretty ver)))
   toNix (WildcardVersionF  _ver) = mkBool False
---  toNix (MajorBoundVersionF ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (disp ver)))
+--  toNix (MajorBoundVersionF ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (pretty ver)))
   toNix (IntersectVersionRangesF v1 v2) = toNix (projectVersionRange v1) $&& toNix (projectVersionRange v2)
   toNix x = error $ "ToNixExpr VersionRange for `" ++ show x ++ "` not implemented!"
 
