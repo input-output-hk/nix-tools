@@ -47,10 +47,10 @@ data Src
   | Git String String (Maybe String) (Maybe String)
   deriving Show
 
-pkgs, hsPkgs, pkgsErrors, pkgconfPkgs, flags :: Text
+pkgs, hsPkgs, errorHandler, pkgconfPkgs, flags :: Text
 pkgs   = "pkgs"
 hsPkgs = "hsPkgs"
-pkgsErrors = "pkgs-errors"
+errorHandler = "errorHandler"
 pkgconfPkgs = "pkgconfPkgs"
 flags  = "flags"
 
@@ -105,7 +105,8 @@ gpd2nix isLocal fileDetails src extra gpd = mkFunction args $ toNixGenericPackag
                           , ("flags", Nothing)
                           , (pkgs, Nothing)
                           , (hsPkgs, Nothing)
-                          , (pkgconfPkgs, Nothing)]
+                          , (pkgconfPkgs, Nothing)
+                          , (errorHandler, Nothing)]
                           True
 
 class IsComponent a where
@@ -275,22 +276,22 @@ toNixGenericPackageDescription isLocal detailLevel gpd = mkNonRecSet
 -- WARNING: these use functions bound at he top level in the GPD expression, they won't work outside it
 
 instance ToNixExpr Dependency where
-  toNix d = selectOr (mkSym hsPkgs) (mkSelector $ quoted pkg) (mkSym hsPkgs @. pkgsErrors @. buildDepError @@ mkStr pkg)
+  toNix d = selectOr (mkSym hsPkgs) (mkSelector $ quoted pkg) (mkSym errorHandler @. buildDepError @@ mkStr pkg)
     where
       pkg = fromString . show . pretty . depPkgName $ d
 
 instance ToNixExpr SysDependency where
-  toNix d = selectOr (mkSym pkgs) (mkSelector $ quoted pkg) (mkSym hsPkgs @. pkgsErrors @. sysDepError @@ mkStr pkg)
+  toNix d = selectOr (mkSym pkgs) (mkSelector $ quoted pkg) (mkSym errorHandler @. sysDepError @@ mkStr pkg)
     where
       pkg = fromString . unSysDependency $ d
 
 instance ToNixExpr PkgconfigDependency where
-  toNix (PkgconfigDependency name _versionRange) = selectOr (mkSym pkgconfPkgs) (mkSelector $ quoted pkg) (mkSym hsPkgs @. pkgsErrors @. pkgConfDepError @@ mkStr pkg)
+  toNix (PkgconfigDependency name _versionRange) = selectOr (mkSym pkgconfPkgs) (mkSelector $ quoted pkg) (mkSym errorHandler @. pkgConfDepError @@ mkStr pkg)
     where
       pkg = fromString . unPkgconfigName $ name
 
 instance ToNixExpr ExeDependency where
-  toNix (ExeDependency pkgName' _unqualCompName _versionRange) = selectOr (mkSym "exes") (mkSelector $ pkg) (mkSym hsPkgs @. pkgsErrors @. exeDepError @@ mkStr pkg)
+  toNix (ExeDependency pkgName' _unqualCompName _versionRange) = selectOr (mkSym "exes") (mkSelector $ pkg) (mkSym errorHandler @. exeDepError @@ mkStr pkg)
     where
       pkg = fromString . show . pretty $ pkgName'
 
@@ -300,13 +301,13 @@ instance ToNixExpr BuildToolDependency where
       -- is reolved use something like:
       -- [nix| hsPkgs.buildPackages.$((pkgName)) or pkgs.buildPackages.$((pkgName)) ]
       selectOr (mkSym hsPkgs) buildPackagesDotName
-        (selectOr (mkSym pkgs) buildPackagesDotName (mkSym hsPkgs @. pkgsErrors @. buildToolDepError @@ mkStr pkg))
+        (selectOr (mkSym pkgs) buildPackagesDotName (mkSym errorHandler @. buildToolDepError @@ mkStr pkg))
     where
       pkg = fromString . show . pretty $ pkgName'
       buildPackagesDotName = mkSelector "buildPackages" <> mkSelector pkg
 
 instance ToNixExpr LegacyExeDependency where
-  toNix (LegacyExeDependency name _versionRange) = selectOr (mkSym hsPkgs) (mkSelector $ quoted pkg) (mkSym hsPkgs @. pkgsErrors @. legacyExeDepError @@ mkStr pkg)
+  toNix (LegacyExeDependency name _versionRange) = selectOr (mkSym hsPkgs) (mkSelector $ quoted pkg) (mkSym errorHandler @. legacyExeDepError @@ mkStr pkg)
     where
       pkg = fromString name
 
