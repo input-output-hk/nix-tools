@@ -159,7 +159,7 @@ packages2nix args pkgs =
                     writeDoc nixFile =<<
                       prettyNix <$> cabal2nix True (argDetailLevel args) src cabalFile
                     return (fromString pkg, fromString pkg $= mkPath False nix)
-       (DVCS (Git url rev) _ subdirs) ->
+       (DVCS (Git url rev) _ _ subdirs) ->
          do hits <- forM subdirs $ \subdir -> liftIO $ cacheHits (argCacheFile args) url rev subdir
             let generateBindings =
                   fetch (cabalFromPath url rev subdirs)

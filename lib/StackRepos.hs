@@ -24,6 +24,7 @@ data SourceRepos = SourceRepos
   { url     :: String
   , rev     :: String
   , sha256  :: Maybe String
+  , branch  :: Maybe String
   , subdirs :: [FilePath]
   } deriving (Show, Eq, Ord, Generic)
 
@@ -41,6 +42,6 @@ stack2nix :: Args -> Stack -> IO ()
 stack2nix args (Stack _ _ pkgs _ _) =
   LBS.writeFile "repos.json" $ encodePretty (
     pkgs >>= (\case
-       (DVCS (Git url rev) sha256 subdirs) ->
-         [SourceRepos { url, rev, sha256, subdirs }]
+       (DVCS (Git url rev) sha256 branch subdirs) ->
+         [SourceRepos { url, rev, sha256, branch, subdirs }]
        _ -> []))
