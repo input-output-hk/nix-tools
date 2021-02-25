@@ -22,7 +22,9 @@ import Distribution.Types.ExeDependency
 import Distribution.Types.LegacyExeDependency
 import Distribution.Types.PkgconfigDependency
 import Distribution.Types.PkgconfigName
+import Distribution.Types.Version
 import Distribution.Types.VersionRange
+import Distribution.CabalSpecVersion
 import Distribution.Compiler
 import Distribution.Types.PackageName (PackageName, mkPackageName, unPackageName)
 import Distribution.Simple.BuildToolDepends (desugarBuildTool)
@@ -181,7 +183,7 @@ instance ToNixExpr PackageIdentifier where
 
 toNixPackageDescription :: Bool -> CabalDetailLevel -> PackageDescription -> NExpr
 toNixPackageDescription isLocal detailLevel pd = mkNonRecSet $
-    [ "specVersion" $= mkStr (fromString (show (pretty (specVersion pd))))
+    [ "specVersion" $= mkStr (fromString (showCabalSpecVersion (specVersion pd)))
     , "identifier"  $= toNix (package pd)
     , "license"     $= mkStr (fromString (show (pretty (license pd))))
 
@@ -354,21 +356,20 @@ instance {-# OVERLAPS #-} ToNixExpr a => ToNixExpr [a] where
 instance ToNixExpr ConfVar where
   toNix (OS os) = mkSym "system" @. (fromString . ("is" ++) . capitalize . show . pretty $ os)
   toNix (Arch arch) = mkSym "system" @. (fromString . ("is" ++) . capitalize . show . pretty $ arch)
-  toNix (Flag flag) = mkSym flags @. (fromString . show . pretty $ flag)
+  toNix (PackageFlag flag) = mkSym flags @. (fromString . show . pretty $ flag)
   toNix (Impl flavour range) = toNix flavour $&& toNix (projectVersionRange range)
 
 instance ToNixExpr CompilerFlavor where
   toNix flavour = mkSym "compiler" @. (fromString . ("is" ++) . capitalize . show . pretty $ flavour)
 
 instance ToNixExpr (VersionRangeF VersionRange) where
-  toNix AnyVersionF              = mkBool True
+  toNix (OrLaterVersionF    ver) | ver == version0 = mkBool True
   toNix (ThisVersionF       ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (pretty ver)))
   toNix (LaterVersionF      ver) = mkSym "compiler" @. "version" @. "gt" @@ mkStr (fromString (show (pretty ver)))
   toNix (OrLaterVersionF    ver) = mkSym "compiler" @. "version" @. "ge" @@ mkStr (fromString (show (pretty ver)))
   toNix (EarlierVersionF    ver) = mkSym "compiler" @. "version" @. "lt" @@ mkStr (fromString (show (pretty ver)))
   toNix (OrEarlierVersionF  ver) = mkSym "compiler" @. "version" @. "le" @@ mkStr (fromString (show (pretty ver)))
-  toNix (WildcardVersionF  _ver) = mkBool False
---  toNix (MajorBoundVersionF ver) = mkSym "compiler" @. "version" @. "eq" @@ mkStr (fromString (show (pretty ver)))
+  toNix (MajorBoundVersionF ver) = toNix (IntersectVersionRangesF (orLaterVersion ver) (earlierVersion (majorUpperBound ver)))
   toNix (IntersectVersionRangesF v1 v2) = toNix (projectVersionRange v1) $&& toNix (projectVersionRange v2)
   toNix x = error $ "ToNixExpr VersionRange for `" ++ show x ++ "` not implemented!"
 
@@ -404,5 +405,5 @@ boolTreeToNix (CondNode True _c bs) =
     [] -> mkBool True
     bs' -> foldl1 ($&&) bs'
 
-instance ToNixBinding Flag where
-  toNixBinding (MkFlag name _desc def _manual) = (fromString . show . pretty $ name) $= mkBool def
+instance ToNixBinding PackageFlag where
+  toNixBinding (MkPackageFlag name _desc def _manual) = (fromString . show . pretty $ name) $= mkBool def
