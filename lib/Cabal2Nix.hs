@@ -229,13 +229,13 @@ srcToNix pi' (PrivateHackage url)
     ]
 srcToNix _ (Git url rev mbSha256 mbPath)
   = mkNonRecSet $
-    [ "src" $= applyMkDefault (mkSym pkgs @. "fetchgit" @@ mkNonRecSet
+    [ "src" $= mkNonRecSet
       [ "url"    $= mkStr (fromString url)
       , "rev"    $= mkStr (fromString rev)
       , "sha256" $= case mbSha256 of
                       Just sha256 -> mkStr (fromString sha256)
                       Nothing     -> mkNull
-      ])
+      ]
     ] <>
     [ "postUnpack"
       $= mkStr (fromString $ "sourceRoot+=/" <> root <> "; echo source root reset to $sourceRoot")

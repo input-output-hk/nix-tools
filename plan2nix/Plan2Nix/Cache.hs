@@ -17,11 +17,11 @@ readCache :: FilePath
                  )]
 readCache f = fmap (toTuple . words) . lines <$> readFile f
   where toTuple [ url, rev, subdir, sha256, pkgname, exprPath ]
-          = ( url, rev, subdir, sha256, pkgname, exprPath )
+          = ( url, rev, subdir, if sha256 == "NOHASH" then "" else sha256, pkgname, exprPath )
 
 appendCache :: FilePath -> String -> String -> String -> String -> String -> String -> IO ()
 appendCache f url rev subdir sha256 pkgname exprPath = do
-  appendFile f $ unwords [ url, rev, subdir, sha256, pkgname, exprPath ]
+  appendFile f $ unwords [ url, rev, subdir, if null sha256 then "NOHASH" else sha256, pkgname, exprPath ]
   appendFile f "\n"
 
 cacheHits :: FilePath -> String -> String -> String -> IO [ (String, String) ]
