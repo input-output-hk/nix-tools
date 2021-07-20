@@ -15,6 +15,7 @@ import qualified Data.HashSet                  as Set
 import           Data.Maybe                               ( mapMaybe
                                                           , isJust
                                                           , fromMaybe
+                                                          , maybeToList
                                                           )
 import           Data.List.NonEmpty                       ( NonEmpty (..) )
 import qualified Data.Text                     as Text
@@ -246,19 +247,23 @@ value2plan plan = Plan { packages, components, extras, compilerVersion, compiler
   components :: HashSet Text
   components =
     Set.fromList
-      $ map (\pkg ->
-          quoted (pkg ^. key "pkg-name" . _String) <> ".components." <>
-            if pkg ^. key "type" . _String == "pre-existing"
-              then "library"
-              else Text.pack . componentNameToHaskellNixAttr (pkg ^. key "pkg-name" . _String) . Text.unpack $ pkg ^. key "component-name" . _String)
+      $ concatMap (\pkg ->
+          let pkgName = pkg ^. key "pkg-name" . _String
+              nixComponentAttr = Text.pack . componentNameToHaskellNixAttr pkgName . Text.unpack
+          in
+            map ((quoted pkgName <> ".components.") <>) $
+              case (pkg ^. key "type" . _String, Map.keys (pkg ^. key "components" . _Object)) of
+                ("pre-existing", _) -> [ "library" ]
+                (_, []) -> [ nixComponentAttr $ pkg ^. key "component-name" . _String ]
+                (_, c)  -> map nixComponentAttr c)
       $ Vector.toList (plan ^. key "install-plan" . _Array)
 
   componentNameToHaskellNixAttr :: Text -> String -> String
   componentNameToHaskellNixAttr pkgName n =
     case span (/=':') n of
-      -- Not sure why `plan.json` has both of these
-      ("", "")    -> "library"
-      ("lib", "") -> "library"
+      ("setup", "") -> "setup"
+      ("", "")      -> "library"
+      ("lib", "")   -> "library"
       (prefix, ':':rest) -> componentPrefixToHaskellNix prefix <> "." <> quoted rest
       _ -> error ("unknown component name format " <> show n <> " for package " <> show pkgName)
 
