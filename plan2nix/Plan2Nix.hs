@@ -247,11 +247,10 @@ value2plan plan = Plan { packages, components, extras, compilerVersion, compiler
   components =
     Set.fromList
       $ map (\pkg ->
-          quoted (pkg ^. key "pkg-name" . _String) <> 
+          quoted (pkg ^. key "pkg-name" . _String) <> ".components." <>
             if pkg ^. key "type" . _String == "pre-existing"
-              then ""
-              else ".components." <> (
-                Text.pack . componentNameToHaskellNixAttr (pkg ^. key "pkg-name" . _String) . Text.unpack $ pkg ^. key "component-name" . _String))
+              then "library"
+              else Text.pack . componentNameToHaskellNixAttr (pkg ^. key "pkg-name" . _String) . Text.unpack $ pkg ^. key "component-name" . _String)
       $ Vector.toList (plan ^. key "install-plan" . _Array)
 
   componentNameToHaskellNixAttr :: Text -> String -> String
