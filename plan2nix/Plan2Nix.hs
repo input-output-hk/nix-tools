@@ -111,7 +111,9 @@ plan2nix args (Plan { packages, extras, components, compilerVersion, compilerPac
   let flags = concatMap (\case
           (name, Just (Package _v _r f _)) -> flags2nix name f
           _ -> []) $ Map.toList extras
-      planned = map (\name -> name <> ".planned" $= ("lib" @. "mkOverride" @@ mkInt 900 @@ mkBool True)) $ Set.toList components
+      -- Set the `planned` option for all components in the plan.
+      planned = map (\name -> name <> ".planned" $=
+        ("lib" @. "mkOverride" @@ mkInt 900 @@ mkBool True)) $ Set.toList components
 
   return $ mkNonRecSet [
     "pkgs" $= ("hackage" ==> mkNonRecSet (
@@ -244,6 +246,7 @@ value2plan plan = Plan { packages, components, extras, compilerVersion, compiler
       $ mapMaybe (\pkg -> (,) (pkg ^. key "pkg-name" . _String) <$> f pkg)
       $ Vector.toList (plan ^. key "install-plan" . _Array)
 
+  -- Set of components that are included in the plan.
   components :: HashSet Text
   components =
     Set.fromList
@@ -258,11 +261,11 @@ value2plan plan = Plan { packages, components, extras, compilerVersion, compiler
                 (_, c)  -> map nixComponentAttr c)
       $ Vector.toList (plan ^. key "install-plan" . _Array)
 
+  -- Convert a cabal stile component name to the haskell.nix attribute path.
   componentNameToHaskellNixAttr :: Text -> String -> String
   componentNameToHaskellNixAttr pkgName n =
     case span (/=':') n of
       ("setup", "") -> "setup"
-      ("", "")      -> "library"
       ("lib", "")   -> "library"
       (prefix, ':':rest) -> componentPrefixToHaskellNix prefix <> "." <> quoted rest
       _ -> error ("unknown component name format " <> show n <> " for package " <> show pkgName)
