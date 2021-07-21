@@ -1,4 +1,4 @@
-{-# LANGUAGE LambdaCase, OverloadedStrings, NamedFieldPuns, RecordWildCards #-}
+{-# LANGUAGE LambdaCase, OverloadedStrings, NamedFieldPuns, RecordWildCards, TupleSections #-}
 
 module Plan2Nix
   ( doPlan2Nix
@@ -33,6 +33,7 @@ import Data.Text.Prettyprint.Doc.Render.Text (hPutDoc)
 import Distribution.Types.PackageId (PackageIdentifier(..))
 import Distribution.Nixpkgs.Fetch (DerivationSource(..), Source(..), Hash(..), fetch)
 import Distribution.Simple.Utils (shortRelativePath)
+import Distribution.Types.Version (Version)
 
 import Control.Monad.Trans.Maybe
 import Control.Monad.IO.Class (liftIO)
@@ -241,9 +242,10 @@ value2plan plan = Plan { packages, components, extras, compilerVersion, compiler
     else Just $ pkg ^. key "pkg-version" . _String
 
   filterInstallPlan :: (Value -> Maybe b) -> HashMap Text b
-  filterInstallPlan f =
-    Map.fromList
-      $ mapMaybe (\pkg -> (,) (pkg ^. key "pkg-name" . _String) <$> f pkg)
+  filterInstallPlan f = fmap snd .
+    -- If the same package occurs more than once, choose the latest
+    Map.fromListWith (\a b -> if (read (Text.unpack $ fst a) :: Version) > read (Text.unpack $ fst b) then a else b)
+      $ mapMaybe (\pkg -> (,) (pkg ^. key "pkg-name" . _String) . (pkg ^. key "pkg-version" . _String,) <$> f pkg)
       $ Vector.toList (plan ^. key "install-plan" . _Array)
 
   -- Set of components that are included in the plan.
