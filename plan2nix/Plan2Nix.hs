@@ -261,7 +261,7 @@ value2plan plan = Plan { packages, components, extras, compilerVersion, compiler
                 (_, c)  -> map nixComponentAttr c)
       $ Vector.toList (plan ^. key "install-plan" . _Array)
 
-  -- Convert a cabal stile component name to the haskell.nix attribute path.
+  -- Convert a cabal style component name to the haskell.nix attribute path.
   componentNameToHaskellNixAttr :: Text -> String -> String
   componentNameToHaskellNixAttr pkgName n =
     case span (/=':') n of
