@@ -34,6 +34,7 @@ import Distribution.Types.PackageId (PackageIdentifier(..))
 import Distribution.Nixpkgs.Fetch (DerivationSource(..), Source(..), Hash(..), fetch)
 import Distribution.Simple.Utils (shortRelativePath)
 import Distribution.Types.Version (Version)
+import Distribution.Parsec (simpleParsec)
 
 import Control.Monad.Trans.Maybe
 import Control.Monad.IO.Class (liftIO)
@@ -244,9 +245,12 @@ value2plan plan = Plan { packages, components, extras, compilerVersion, compiler
   filterInstallPlan :: (Value -> Maybe b) -> HashMap Text b
   filterInstallPlan f = fmap snd .
     -- If the same package occurs more than once, choose the latest
-    Map.fromListWith (\a b -> if (read (Text.unpack $ fst a) :: Version) > read (Text.unpack $ fst b) then a else b)
+    Map.fromListWith (\a b -> if parseVersion (fst a) > parseVersion (fst b) then a else b)
       $ mapMaybe (\pkg -> (,) (pkg ^. key "pkg-name" . _String) . (pkg ^. key "pkg-version" . _String,) <$> f pkg)
       $ Vector.toList (plan ^. key "install-plan" . _Array)
+
+  parseVersion :: Text -> Version
+  parseVersion s = fromMaybe (error $ "Unable to parse version " <> show s) . simpleParsec $ Text.unpack s
 
   -- Set of components that are included in the plan.
   components :: HashSet Text
