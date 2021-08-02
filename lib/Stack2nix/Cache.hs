@@ -4,7 +4,7 @@ module Stack2nix.Cache
   , cacheHits
   ) where
 
-import Control.Monad ((<$!>))
+import Control.DeepSeq ((<$!!>))
 import Control.Exception (catch, SomeException(..))
 
 readCache :: FilePath
@@ -15,7 +15,7 @@ readCache :: FilePath
                  , String -- pkgname
                  , String -- nixexpr-path
                  )]
-readCache f = fmap (toTuple . words) . lines <$!> readFile f
+readCache f = fmap (toTuple . words) . lines <$!!> readFile f
   where toTuple [ url, rev, subdir, sha256, pkgname, exprPath ]
           = ( url, rev, subdir, sha256, pkgname, exprPath )
 
