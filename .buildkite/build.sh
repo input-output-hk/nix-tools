@@ -1,7 +1,7 @@
 #! /usr/bin/env nix-shell
-#! nix-shell -I "nixpkgs=channel:nixos-20.03" --pure -i bash -p nix cabal-install ghc git nix-prefetch-git cacert
+#! nix-shell -I "nixpkgs=channel:nixos-21.11" --pure -i bash -p nixUnstable cabal-install ghc git nix-prefetch-git cacert
 
-export NIX_PATH="nixpkgs=channel:nixos-20.03"
+export NIX_PATH="nixpkgs=channel:nixos-21.11"
 index_state="2020-01-10T00:00:00Z"
 expected_hash="0z2jc4fibfxz88pfgjq3wk5j3v7sn34xkwb8h60hbwfwhhy63vx6"
 
